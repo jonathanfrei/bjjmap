@@ -4,18 +4,17 @@
 <meta name="description" content="Interactive graph of the BJJ Map — positions, techniques, and submissions.">
 <title>BJJ Map — Graph</title>
 <link rel="icon" href="__BASE__/static/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="__BASE__/static/style.css">
 <style>
-  body{font-family:system-ui,sans-serif;margin:0}
-  nav{padding:.6rem 1rem;border-bottom:1px solid #ddd}
-  nav a{margin-right:1rem}
-  #net{height:calc(100vh - 170px);min-height:300px}
-  #legend,#filters{padding:.4rem 1rem;color:#555;font-size:.85rem}
+  #net{height:calc(100vh - 220px);min-height:300px;background:var(--bg)}
+  #legend,#filters{padding:.4rem 1rem;color:var(--muted);font-size:.85rem}
   #filters label{margin-right:.8em;white-space:nowrap}
+  #filters input{accent-color:var(--accent)}
   .dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin:0 .3em 0 1em}
 </style>
 <script src="__BASE__/static/vis-network.min.js"></script>
 </head><body>
-<nav><a href="__BASE__/">Map</a><b>Graph</b><a href="__BASE__/health/">Health</a><span id="crumb" style="margin-left:1rem;color:#555"></span><span id="full" style="margin-left:1rem"></span></nav>
+<nav class="top"><a href="__BASE__/">Map</a><b>Graph</b><a href="__BASE__/health/">Health</a><span id="crumb" style="margin-left:1rem;color:var(--muted)"></span><span id="full" style="margin-left:1rem"></span></nav>
 <div id="legend">
   <span class="dot" style="background:#f4b400"></span>condition (pts)
   <span class="dot" style="background:#4285f4"></span>position
@@ -105,8 +104,12 @@ fetch(BASE + '/api/graph.json').then(function(r){ return r.json(); }).then(funct
       edges.update({id: e.id, hidden: !(visSet[e.from] && visSet[e.to])});
     });
   }
+  var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var net = new vis.Network(document.getElementById('net'), {nodes: nodes, edges: edges}, {
-    physics: {
+    nodes: {font: {color: dark ? '#ececea' : '#1a1a18'}},
+    edges: {font: {color: dark ? '#ececea' : '#1a1a18'}},
+    physics: reduced ? false : {
       barnesHut: {gravitationalConstant: -2500, centralGravity: 0.6,
                   springLength: 90, springConstant: 0.06,
                   damping: 0.85, avoidOverlap: 0.6},

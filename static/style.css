@@ -1,0 +1,156 @@
+/* BJJ Map design tokens — Option A: quiet dojo.
+   Edit the palette here; every page, badge, and graph legend reads these. */
+:root {
+  color-scheme: light dark;
+  --bg: #fdfdfb;
+  --surface: #ffffff;
+  --ink: #1a1a18;
+  --muted: #6b6b66;
+  --line: #e4e4dc;
+  --accent: #1d4ed8;
+  --accent-ink: #ffffff;
+  --c-condition: #b98a00;
+  --c-position: #4285f4;
+  --c-technique: #0f9d58;
+  --c-submission: #db4437;
+  --c-neutral: #9e9e9e;
+  --radius: 8px;
+  --maxw: 1080px;
+  --focus: #1d4ed8;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141412;
+    --surface: #1d1d1b;
+    --ink: #ececea;
+    --muted: #a8a8a0;
+    --line: #33332e;
+    --accent: #8ab4ff;
+    --accent-ink: #101418;
+    --c-condition: #f4b400;
+    --c-position: #8ab4ff;
+    --c-technique: #34d399;
+    --c-submission: #f87171;
+    --c-neutral: #9e9e9e;
+    --focus: #8ab4ff;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  margin: 0;
+  line-height: 1.5;
+}
+.wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 1rem; }
+nav.top {
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  padding: 0.6rem 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+nav.top a { margin-right: 1rem; color: var(--accent); }
+h1 { font-size: 1.5rem; margin: 1.2rem 0 0.6rem; }
+h2 { font-size: 1.15rem; margin: 1.6rem 0 0.5rem; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, input:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--c-neutral);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin: 1rem 0;
+}
+.kind-condition { border-left-color: var(--c-condition); }
+.kind-position { border-left-color: var(--c-position); }
+.kind-technique { border-left-color: var(--c-technique); }
+.kind-submission { border-left-color: var(--c-submission); }
+.kind-escape, .kind-transition { border-left-color: var(--c-neutral); }
+.badge {
+  display: inline-block;
+  font-size: 0.75em;
+  font-weight: 600;
+  border-radius: 1em;
+  padding: 0.1em 0.6em;
+  margin-right: 0.4em;
+  color: var(--surface);
+  background: var(--c-neutral);
+}
+.badge-condition { background: var(--c-condition); }
+.badge-position { background: var(--c-position); }
+.badge-technique { background: var(--c-technique); }
+.badge-submission { background: var(--c-submission); }
+.muted { color: var(--muted); }
+.pill {
+  display: inline-block;
+  background: var(--line);
+  color: var(--ink);
+  border-radius: 1em;
+  padding: 0.1em 0.7em;
+  margin: 0.1em;
+  font-size: 0.85em;
+}
+/* Node layout: single column on mobile (desc, videos, nav); sidebar ≥900px. */
+.node-layout { display: grid; gap: 0 2rem; grid-template-columns: 1fr; }
+.node-layout aside ul { padding-left: 1.2rem; margin: 0.4rem 0; }
+@media (min-width: 900px) {
+  .node-layout { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; }
+  .node-layout aside {
+    position: sticky;
+    top: 60px;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    border-left: 1px solid var(--line);
+    padding-left: 1.2rem;
+  }
+}
+/* Click-to-play video facades. */
+.facade {
+  position: relative;
+  max-width: 560px;
+  cursor: pointer;
+  background: #000;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.facade img { width: 100%; display: block; aspect-ratio: 16/9; object-fit: cover; }
+.facade .play {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 68px; height: 48px;
+  background: rgba(0,0,0,.75);
+  border-radius: 12px; border: 0; cursor: pointer;
+}
+.facade .play:after {
+  content: ''; position: absolute; top: 50%; left: 50%;
+  transform: translate(-35%,-50%);
+  border-left: 22px solid #fff;
+  border-top: 14px solid transparent;
+  border-bottom: 14px solid transparent;
+}
+.facade iframe { width: 100%; aspect-ratio: 16/9; height: auto; display: block; border: 0; }
+input[type=text], input:not([type]) {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.4em 0.6em;
+}
+button {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 0;
+  border-radius: 4px;
+  padding: 0.4em 0.9em;
+  cursor: pointer;
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

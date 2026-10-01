@@ -3,29 +3,6 @@ export.py (static site) so both emit identical markup. No I/O here.
 """
 import html
 
-CSS = (
-    "<style>"
-    "body{font-family:system-ui,sans-serif;max-width:760px;margin:2rem auto;"
-    "padding:0 1rem;line-height:1.5}"
-    "nav a{margin-right:1rem}"
-    ".card{border:1px solid #ddd;border-radius:8px;padding:1rem;margin:1rem 0}"
-    "iframe{max-width:100%}"
-    ".muted{color:#666}"
-    ".pill{display:inline-block;background:#eee;border-radius:1em;"
-    "padding:.1em .7em;margin:.1em;font-size:.85em}"
-    ".facade{position:relative;max-width:560px;cursor:pointer;"
-    "background:#000;border-radius:4px;overflow:hidden}"
-    ".facade img{width:100%;display:block;aspect-ratio:16/9;object-fit:cover}"
-    ".facade .play{position:absolute;top:50%;left:50%;"
-    "transform:translate(-50%,-50%);width:68px;height:48px;"
-    "background:rgba(0,0,0,.75);border-radius:12px;border:0;cursor:pointer}"
-    ".facade .play:after{content:'';position:absolute;top:50%;left:50%;"
-    "transform:translate(-35%,-50%);border-left:22px solid #fff;"
-    "border-top:14px solid transparent;border-bottom:14px solid transparent}"
-    ".facade iframe{width:100%;aspect-ratio:16/9;height:auto;display:block}"
-    "</style>"
-)
-
 FACADE_JS = (
     "<script>"
     "document.addEventListener('click',function(e){"
@@ -42,6 +19,11 @@ FACADE_JS = (
 
 ROLE_ORDER = {"concept": 0, "howto": 1, "troubleshoot": 2}
 
+# Tokens verify.py requires in static/style.css (single source of truth).
+TOKENS = ["--bg", "--surface", "--ink", "--muted", "--line", "--accent",
+          "--accent-ink", "--c-condition", "--c-position", "--c-technique",
+          "--c-submission", "--c-neutral", "--radius", "--maxw", "--focus"]
+
 
 def u(base, path):
     """Prefix a root-absolute path with the deploy base path."""
@@ -52,13 +34,19 @@ def page(base, title, body, extra_head=""):
     return (
         "<!doctype html><html lang=en><head><meta charset=utf-8>"
         "<meta name=viewport content='width=device-width,initial-scale=1'>"
+        "<meta name=theme-color content='#fdfdfb' "
+        "media='(prefers-color-scheme: light)'>"
+        "<meta name=theme-color content='#141412' "
+        "media='(prefers-color-scheme: dark)'>"
         f"<meta name=description content='{html.escape(title)} — BJJ Map, "
         "a no-gi connection map of positions and techniques.'>"
-        f"<title>{html.escape(title)}</title>{CSS}{extra_head}</head><body>"
-        f"<nav><a href='{u(base, '/')}'>Map</a>"
+        f"<link rel=stylesheet href='{base}/static/style.css'>"
+        f"<link rel=icon href='{base}/static/favicon.svg' type='image/svg+xml'>"
+        f"<title>{html.escape(title)}</title>{extra_head}</head><body>"
+        f"<nav class=top><a href='{u(base, '/')}'>Map</a>"
         f"<a href='{u(base, '/graph/')}'>Graph</a>"
         f"<a href='{u(base, '/health/')}'>Health</a></nav>"
-        f"<h1>{html.escape(title)}</h1>{body}</body></html>"
+        f"<div class=wrap><h1>{html.escape(title)}</h1>{body}</div></body></html>"
     )
 
 
@@ -78,7 +66,9 @@ def node_summary(base, r):
     if r["is_terminal"]:
         bits.append("terminal")
     return (
-        f"<div class=card><a href='{u(base, '/node/')}{r['id']}/'>"
+        f"<div class='card kind-{r['kind']}'>"
+        f"<span class='badge badge-{r['kind']}'>{r['kind']}</span>"
+        f"<a href='{u(base, '/node/')}{r['id']}/'>"
         f"<b>{html.escape(r['name'])}</b></a> "
         f"<span class=muted>{' · '.join(bits)}</span><br>"
         f"{html.escape(r['description'] or '')}</div>"
@@ -162,14 +152,14 @@ def node_body(base, n, vids, aliases, techs, incoming, outgoing):
     body += "<h2>Instruction</h2>"
     body += "".join(video_card(dict(v)) for v in vids) or \
         "<p class=muted>No videos yet — stub, curation pending.</p>"
-    body += "<h2>How you got here</h2><ul>"
-    body += edge_list(base, incoming, "from_node") + "</ul>"
-    body += "<h2>Where you can go</h2><ul>"
-    body += edge_list(base, outgoing, "to_node") + "</ul>"
-    body += f"<p><a href='{u(base, '/graph/')}?focus={n['id']}'>" \
+    main = "<main>" + body + "</main>"
+    nav = "<aside><h2>Where you can go</h2><ul>"
+    nav += edge_list(base, outgoing, "to_node") + "</ul>"
+    nav += f"<p><a href='{u(base, '/graph/')}?focus={n['id']}'>" \
         "View in graph</a></p>"
-    body += FACADE_JS
-    return body
+    nav += "<h2>How you got here</h2><ul>"
+    nav += edge_list(base, incoming, "from_node") + "</ul></aside>"
+    return "<div class=node-layout>" + main + nav + "</div>" + FACADE_JS
 
 
 def coverage_body(base, rep):

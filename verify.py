@@ -2,10 +2,14 @@
 --strict is what CI runs before export; without it, warnings don't fail.
 Stdlib only.
 """
+import os
 import sqlite3
 import sys
 
+import render
 import store
+
+BASE = os.path.dirname(os.path.abspath(__file__))
 
 # Deliberate cross-node reuse (same video, different role per node).
 KNOWN_REUSE = {
@@ -84,6 +88,10 @@ def main():
         check(dups == 0, f"{dups} youtube_id(s) reused across nodes", warn=True)
     c.close()
 
+    # Theme drift gate: every token must exist in static/style.css.
+    css = open(os.path.join(BASE, "static", "style.css")).read()
+    for tok in render.TOKENS:
+        check(tok in css, f"style.css missing token {tok}")
     for w in warnings:
         print("WARN:", w)
     for e in errors:
