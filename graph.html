@@ -1,0 +1,67 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BJJ Map — Graph</title>
+<style>
+  body{font-family:system-ui,sans-serif;margin:0}
+  nav{padding:.6rem 1rem;border-bottom:1px solid #ddd}
+  nav a{margin-right:1rem}
+  #net{height:calc(100vh - 120px)}
+  #legend{padding:.4rem 1rem;color:#555;font-size:.85rem}
+  .dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin:0 .3em 0 1em}
+</style>
+<script src="/static/vis-network.min.js"></script>
+</head><body>
+<nav><a href="/">Map</a><b>Graph</b><span id="crumb" style="margin-left:1rem;color:#555"></span></nav>
+<div id="legend">
+  <span class="dot" style="background:#f4b400"></span>condition (pts)
+  <span class="dot" style="background:#4285f4"></span>position
+  <span class="dot" style="background:#0f9d58"></span>technique
+  <span class="dot" style="background:#db4437"></span>submission
+  <span class="dot" style="background:#9e9e9e"></span>escape/transition
+  — scroll to zoom, click a node to open it
+</div>
+<div id="net"></div>
+<script>
+const COLORS = {condition:'#f4b400', position:'#4285f4', technique:'#0f9d58',
+                submission:'#db4437', escape:'#9e9e9e', transition:'#9e9e9e'};
+const focus = new URLSearchParams(location.search).get('focus');
+fetch('/api/graph').then(r => r.json()).then(g => {
+  const nodes = new vis.DataSet(g.nodes.map(n => ({
+    id: n.id, label: n.name + (n.points ? ' (' + n.points + ')' : ''),
+    title: n.description || n.name,
+    color: COLORS[n.kind] || '#ccc',
+    size: n.kind === 'condition' ? 30 : n.kind === 'technique' ? 16 : 22,
+    font: {size: 12}
+  })));
+  const edges = new vis.DataSet(g.edges.map((e, i) => ({
+    id: i, from: e.from_node, to: e.to_node, label: e.label,
+    arrows: 'to', font: {size: 9, strokeWidth: 3, strokeColor: '#fff'},
+    color: {opacity: 0.45}, smooth: {type: 'continuous'}
+  })));
+  const net = new vis.Network(document.getElementById('net'), {nodes, edges}, {
+    physics: {
+      barnesHut: {gravitationalConstant: -2500, centralGravity: 0.6,
+                  springLength: 90, springConstant: 0.06,
+                  damping: 0.85, avoidOverlap: 0.6},
+      minVelocity: 0.5, maxVelocity: 8, stabilization: {iterations: 400}
+    },
+    interaction: {hover: true}
+  });
+  net.once('stabilized', () => {
+    net.fit({animation: {duration: 400}});
+    if (focus && nodes.get(focus)) {
+      net.selectNodes([focus]);
+      net.focus(focus, {scale: 1.1, animation: {duration: 600}});
+      const n = g.nodes.find(x => x.id === focus);
+      document.getElementById('crumb').innerHTML =
+        'centered on <b></b> <a href="/node/' + focus + '">open page</a>';
+      document.querySelector('#crumb b').textContent = n.name;
+    }
+  });
+  net.on('click', p => {
+    if (p.nodes.length) location.href = '/node/' + p.nodes[0];
+  });
+});
+</script>
+</body></html>
