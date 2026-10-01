@@ -1,18 +1,21 @@
 <!doctype html>
-<html><head><meta charset="utf-8">
+<html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Interactive graph of the BJJ Map — positions, techniques, and submissions.">
 <title>BJJ Map — Graph</title>
+<link rel="icon" href="__BASE__/static/favicon.svg" type="image/svg+xml">
 <style>
   body{font-family:system-ui,sans-serif;margin:0}
   nav{padding:.6rem 1rem;border-bottom:1px solid #ddd}
   nav a{margin-right:1rem}
-  #net{height:calc(100vh - 120px)}
-  #legend{padding:.4rem 1rem;color:#555;font-size:.85rem}
+  #net{height:calc(100vh - 170px);min-height:300px}
+  #legend,#filters{padding:.4rem 1rem;color:#555;font-size:.85rem}
+  #filters label{margin-right:.8em;white-space:nowrap}
   .dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin:0 .3em 0 1em}
 </style>
-<script src="/static/vis-network.min.js"></script>
+<script src="__BASE__/static/vis-network.min.js"></script>
 </head><body>
-<nav><a href="/">Map</a><b>Graph</b><span id="crumb" style="margin-left:1rem;color:#555"></span></nav>
+<nav><a href="__BASE__/">Map</a><b>Graph</b><a href="__BASE__/health/">Health</a><span id="crumb" style="margin-left:1rem;color:#555"></span></nav>
 <div id="legend">
   <span class="dot" style="background:#f4b400"></span>condition (pts)
   <span class="dot" style="background:#4285f4"></span>position
@@ -21,25 +24,71 @@
   <span class="dot" style="background:#9e9e9e"></span>escape/transition
   — scroll to zoom, click a node to open it
 </div>
+<div id="filters"></div>
 <div id="net"></div>
 <script>
-const COLORS = {condition:'#f4b400', position:'#4285f4', technique:'#0f9d58',
-                submission:'#db4437', escape:'#9e9e9e', transition:'#9e9e9e'};
-const focus = new URLSearchParams(location.search).get('focus');
-fetch('/api/graph').then(r => r.json()).then(g => {
-  const nodes = new vis.DataSet(g.nodes.map(n => ({
-    id: n.id, label: n.name + (n.points ? ' (' + n.points + ')' : ''),
-    title: n.description || n.name,
-    color: COLORS[n.kind] || '#ccc',
-    size: n.kind === 'condition' ? 30 : n.kind === 'technique' ? 16 : 22,
-    font: {size: 12}
-  })));
-  const edges = new vis.DataSet(g.edges.map((e, i) => ({
-    id: i, from: e.from_node, to: e.to_node, label: e.label,
-    arrows: 'to', font: {size: 9, strokeWidth: 3, strokeColor: '#fff'},
-    color: {opacity: 0.45}, smooth: {type: 'continuous'}
-  })));
-  const net = new vis.Network(document.getElementById('net'), {nodes, edges}, {
+(function(){
+var BASE = "__BASE__";
+var COLORS = {condition:'#f4b400', position:'#4285f4', technique:'#0f9d58',
+              submission:'#db4437', escape:'#9e9e9e', transition:'#9e9e9e'};
+var focus = new URLSearchParams(location.search).get('focus');
+// Strip any HTML before handing text to vis tooltips (XSS fence).
+function clean(s){ var d = document.createElement('div'); d.innerHTML = s || ''; return d.textContent || ''; }
+fetch(BASE + '/api/graph.json').then(function(r){ return r.json(); }).then(function(g){
+  var phases = {};
+  g.nodes.forEach(function(n){ phases[n.phase || 'other'] = true; });
+  var kinds = {};
+  g.nodes.forEach(function(n){ kinds[n.kind] = true; });
+  var box = document.getElementById('filters');
+  function group(title, keys, active){
+    var s = document.createElement('span');
+    s.innerHTML = '<b>' + title + ':</b> ';
+    keys.sort().forEach(function(k){
+      var lab = document.createElement('label');
+      var cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.checked = true; cb.dataset.group = title; cb.value = k;
+      cb.onchange = apply;
+      lab.appendChild(cb);
+      lab.appendChild(document.createTextNode(' ' + k));
+      s.appendChild(lab);
+    });
+    box.appendChild(s);
+  }
+  group('phase', Object.keys(phases));
+  group('kind', Object.keys(kinds));
+  var nodes = new vis.DataSet(g.nodes.map(function(n){
+    return {
+      id: n.id, label: n.name + (n.points ? ' (' + n.points + ')' : ''),
+      title: clean(n.description || n.name),
+      color: COLORS[n.kind] || '#ccc', phase: n.phase || 'other', kind: n.kind,
+      hidden: false,
+      size: n.kind === 'condition' ? 30 : n.kind === 'technique' ? 16 : 22,
+      font: {size: 12}
+    };
+  }));
+  var edges = new vis.DataSet(g.edges.map(function(e, i){
+    return {id: i, from: e.from_node, to: e.to_node, label: e.label,
+      arrows: 'to', font: {size: 9, strokeWidth: 3, strokeColor: '#fff'},
+      color: {opacity: 0.45}, smooth: {type: 'continuous'}};
+  }));
+  function apply(){
+    var on = {};
+    box.querySelectorAll('input').forEach(function(cb){
+      on[cb.dataset.group + ':' + cb.value] = cb.checked;
+    });
+    var visIds = [];
+    nodes.forEach(function(n){
+      var show = on['phase:' + n.phase] !== false && on['kind:' + n.kind] !== false;
+      nodes.update({id: n.id, hidden: !show});
+      if (show) visIds.push(n.id);
+    });
+    var visSet = {};
+    visIds.forEach(function(id){ visSet[id] = true; });
+    edges.forEach(function(e){
+      edges.update({id: e.id, hidden: !(visSet[e.from] && visSet[e.to])});
+    });
+  }
+  var net = new vis.Network(document.getElementById('net'), {nodes: nodes, edges: edges}, {
     physics: {
       barnesHut: {gravitationalConstant: -2500, centralGravity: 0.6,
                   springLength: 90, springConstant: 0.06,
@@ -48,20 +97,28 @@ fetch('/api/graph').then(r => r.json()).then(g => {
     },
     interaction: {hover: true}
   });
-  net.once('stabilized', () => {
+  net.once('stabilized', function(){
     net.fit({animation: {duration: 400}});
     if (focus && nodes.get(focus)) {
-      net.selectNodes([focus]);
-      net.focus(focus, {scale: 1.1, animation: {duration: 600}});
-      const n = g.nodes.find(x => x.id === focus);
-      document.getElementById('crumb').innerHTML =
-        'centered on <b></b> <a href="/node/' + focus + '">open page</a>';
-      document.querySelector('#crumb b').textContent = n.name;
+      try {
+        net.selectNodes([focus]);
+        net.focus(focus, {scale: 1.1, animation: {duration: 600}});
+      } catch (err) {}
+      var n = null;
+      g.nodes.forEach(function(x){ if (x.id === focus) n = x; });
+      var crumb = document.getElementById('crumb');
+      crumb.innerHTML = 'centered on <b></b> ';
+      crumb.querySelector('b').textContent = n ? n.name : focus;
+      var a = document.createElement('a');
+      a.href = BASE + '/node/' + focus + '/';
+      a.textContent = 'open page';
+      crumb.appendChild(a);
     }
   });
-  net.on('click', p => {
-    if (p.nodes.length) location.href = '/node/' + p.nodes[0];
+  net.on('click', function(p){
+    if (p.nodes.length) location.href = BASE + '/node/' + p.nodes[0] + '/';
   });
 });
+})();
 </script>
 </body></html>

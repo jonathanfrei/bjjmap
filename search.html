@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Search the BJJ Map — positions, techniques, and submissions.">
+<title>BJJ Map — Search</title>
+<link rel="icon" href="__BASE__/static/favicon.svg" type="image/svg+xml">
+</head><body>
+<nav><a href="__BASE__/">Map</a><a href="__BASE__/graph/">Graph</a><a href="__BASE__/health/">Health</a></nav>
+<h1>Search</h1>
+<input id="q" placeholder="Search positions, techniques…" style="width:70%" maxlength="120" autocomplete="off">
+<p id="count" style="color:#666"></p>
+<div id="hits"></div>
+<script>
+(function(){
+var BASE = "__BASE__";
+var input = document.getElementById('q');
+var hits = document.getElementById('hits');
+var count = document.getElementById('count');
+var items = [];
+function esc(s){ var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+function rank(it, q){
+  var name = it.name.toLowerCase();
+  if (name.indexOf(q) === 0) return 0;
+  if (name.split(/[\s\-\(\)]+/).some(function(w){ return w.indexOf(q) === 0; })) return 1;
+  if (name.indexOf(q) > -1) return 2;
+  if ((it.aliases || []).join(' ').toLowerCase().indexOf(q) > -1) return 3;
+  if ((it.description || '').toLowerCase().indexOf(q) > -1) return 4;
+  return 5;
+}
+function render(){
+  var q = input.value.trim().toLowerCase().slice(0, 120);
+  if (!q) { hits.innerHTML = ''; count.textContent = ''; return; }
+  var scored = [];
+  items.forEach(function(it){
+    var r = rank(it, q);
+    if (r < 5) scored.push([r, it]);
+  });
+  scored.sort(function(a, b){ return a[0] - b[0] || (a[1].name < b[1].name ? -1 : 1); });
+  count.textContent = scored.length + ' result(s)';
+  hits.innerHTML = scored.map(function(pair){
+    var it = pair[1];
+    return '<div style="border:1px solid #ddd;border-radius:8px;padding:1rem;margin:1rem 0">' +
+      '<a href="' + BASE + '/node/' + encodeURIComponent(it.id) + '/"><b>' + esc(it.name) + '</b></a> ' +
+      '<span style="color:#666">' + esc(it.kind) + ' · ' + esc(it.side) + '</span><br>' +
+      esc(it.description || '') + '</div>';
+  }).join('');
+}
+var params = new URLSearchParams(location.search);
+if (params.get('q')) { input.value = params.get('q').slice(0, 120); }
+fetch(BASE + '/api/search-index.json').then(function(r){ return r.json(); }).then(function(data){
+  items = data;
+  render();
+});
+input.addEventListener('input', render);
+})();
+</script>
+</body></html>
