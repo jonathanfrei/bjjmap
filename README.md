@@ -10,7 +10,8 @@ No-gi focus for v1. Scoring anchors follow the IBJJF rulebook (June 2024).
 
 ```bash
 ./backup.sh          # timestamped .db + .sql dump into backups/ (run before curation)
-python3 seed.py   # create + seed bjj.db (safe to re-run: INSERT OR IGNORE/REPLACE)
+python3 seed.py path/to/new.db  # empty schema bootstrap (content lives in bjj.db)
+python3 verify.py --strict  # integrity gate (CI runs this before export)
 python3 app.py    # serve on http://127.0.0.1:8000 (stdlib only, no deps)
 python3 check_links.py  # monthly: oEmbed sweep, sets videos.stale=1 on dead embeds
 ```
@@ -65,11 +66,10 @@ See AGENTS.md for restart commands.
 
 ## Current content
 
-27 nodes / ~35 edges: standing, takedown (double/single leg), closed/half
-guard top+bottom, guard pass (toreando, leg drag, underhook half pass),
-side control, north-south, knee on belly, mount top/bottom, back control
-top/bottom, turtle, bridge escape, armbar, RNC. Technique videos still
-mostly empty (placeholders in seed).
+75 nodes / 130+ edges across Standup, Guard, Control, Mount, Back, Submissions,
+and Leg Entanglements phases. Every node carries curated no-gi video;
+`/coverage` tracks map health (missing entries/exits, bare conditions, stubs,
+stale embeds).
 
 ## Roadmap
 

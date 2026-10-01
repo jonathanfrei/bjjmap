@@ -1,3 +1,6 @@
 backups/
 __pycache__/
 *.log
+*.pdf
+site/
+.local/

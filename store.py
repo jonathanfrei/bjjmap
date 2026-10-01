@@ -58,6 +58,14 @@ def edges_out(c, nid):
     ).fetchall()
 
 
+def techniques_for(c, nid):
+    """Techniques that score as this condition (reverse of scores_as)."""
+    return c.execute(
+        "SELECT * FROM nodes WHERE scores_as=? ORDER BY name",
+        (nid,),
+    ).fetchall()
+
+
 def search(c, term):
     like = f"%{term}%"
     return c.execute(

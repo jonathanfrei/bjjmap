@@ -42,6 +42,13 @@ bottom's underhook game, back retention pairs with back escapes. When adding
 a video to one side of a position, check whether the other side needs its
 mirror.
 
+## Edge-label vocabulary (controlled — use these, put color in description)
+
+attack with · sweep with · pass with · submit with · scores as · advance to ·
+chains to · transition to · take back · enter · open to · break with ·
+lands in · recover to · escape via · escape to · counter with · defend with ·
+stabilize to · pull to
+
 ## Packet workflow (per cluster, e.g. half guard)
 
 1. Research 2–4 candidate videos per node; verify IDs via oEmbed.

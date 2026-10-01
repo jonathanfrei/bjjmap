@@ -194,6 +194,12 @@ class H(BaseHTTPRequestHandler):
                 for a in aliases)
             body += f"<p>Also called: {pills}</p>"
         body += f"<p>{html.escape(n['description'] or '')}</p>"
+        if n["kind"] == "condition":
+            techs = store.techniques_for(c, nid)
+            body += "<h2>Ways to score it</h2><ul>" + "".join(
+                f"<li><a href='/node/{t['id']}'>{html.escape(t['name'])}</a> "
+                f"<span class=muted>— {html.escape(t['description'] or '')}"
+                f"</span></li>" for t in techs) + "</ul>"
         body += "<h2>Instruction</h2>"
         body += "".join(video_card(dict(v)) for v in vids) or \
             "<p class=muted>No videos yet — stub, curation pending.</p>"
