@@ -4,7 +4,13 @@
 
 - VPS on tailnet as `omarchy` (100.97.46.91). App served via
   `tailscale serve --bg --set-path / http://127.0.0.1:8000`.
-- Public URL (tailnet only): `https://omarchy.tail44804f.ts.net/`
+- Private preview (tailnet only): `https://omarchy.tail44804f.ts.net/`
+- Public site: `https://jonathanfrei.github.io/bjjmap/` (Pages, auto-deployed)
+- Shell quirk: `HOME` is unset in tool shells — `export HOME=/home/jfrei`
+  first, or `gh`/git-credential can't find auth. The `gh` binary lives at
+  `~/.local/share/mise/installs/gh/2.101.0/gh_2.101.0_linux_amd64/bin/gh`;
+  if git push fails on credentials, reset the helper to that path
+  (a stale mise `latest` symlink broke it once).
 - Python 3.14, **no pip** (`No module named pip`), no venv. Stdlib only:
   `sqlite3`, `http.server`. Do NOT add dependencies without asking.
 - PDF tools available: `pdftotext` etc. (poppler). `python3` is NOT on the
@@ -50,9 +56,13 @@
 - `seed.py` is the POC seed; later seeds used inline `sqlite3` heredocs.
   Prefer idempotent SQL (`INSERT OR IGNORE`) so re-runs are safe.
 - Run `./backup.sh` before any curation batch. `backups/` holds .db + .sql.
-- New content rows should carry `source='agent:<packet-name>'`.
+- New content rows should carry `source='agent:<packet>'`.
 - Check `/coverage` after curation to catch missing entries/exits.
+- Run `verify.py --strict` before committing; CI enforces it anyway.
+- To preview the static build: `python3 export.py --out /tmp/site --base ''`
+  then diff a page against the live server — they must be identical.
 - Run `python3 check_links.py` monthly; it sets `videos.stale=1`.
-  (First run caught 4 dead POC placeholder IDs — rejected, kept as record.)
 - Graph page (`graph.html`) uses vis-network 9.1.9 vendored in `static/`.
-  Deep-link format: `/graph?focus=<node_id>`.
+  Deep-link format: `/graph/?focus=<node_id>`.
+  Canonical routes use trailing slashes (`/node/<id>/`, `/health/`);
+  `/coverage` and `/node/<id>` redirect for compat.

@@ -1,10 +1,13 @@
 # BJJ Map
 
+Live: **https://jonathanfrei.github.io/bjjmap/** (static export via GitHub Pages)
+
 A connection map for Brazilian jiu-jitsu: not instructional content, but the
 connective tissue between positions and techniques. Each node links to curated
 free YouTube instruction; edges show how you get there and where you can go.
 
 No-gi focus for v1. Scoring anchors follow the IBJJF rulebook (June 2024).
+See CONTENT.md for content/licensing notes, CURATION.md for the video rubric.
 
 ## Quick start
 
@@ -34,11 +37,22 @@ See AGENTS.md for restart commands.
 
 ## Code layout
 
-- `app.py` — HTTP routes + HTML rendering only
+- `app.py` — HTTP routes only (threaded); all HTML comes from `render.py`
+- `render.py` — shared rendering used by the server AND `export.py`
+  (live and static output are byte-identical; verified by diff)
+- `export.py` — static export (`--out site --base /bjjmap`); CI deploys it
 - `store.py` — all SQLite queries + `coverage()` health report
-- `graph.html` — graph page (loads `/static/vis-network.min.js`)
+- `verify.py` — integrity gate; `verify.py --strict` must pass before export
+- `graph.html` / `search.html` — templates with `__BASE__` placeholders
+- `schema.sql` + `migrations/` — canonical schema and its history
 - `check_links.py` — monthly dead-embed sweep (`stale=1`)
 - `backup.sh` — timestamped backups before curation work
+
+## Deploy
+
+Push to `main` → Actions runs `verify.py --strict` → `export.py` →
+GitHub Pages. A red X means nothing ships. `check_links.py` stays a local
+monthly job (polite to YouTube from one IP), then fix → push → redeploy.
 
 ## Data model (SQLite, `bjj.db`)
 
