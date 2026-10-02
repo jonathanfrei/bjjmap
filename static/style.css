@@ -193,13 +193,17 @@ button:active, .button:active { transform: translateY(1px); }
 .badge-submission { color: var(--on-submission); background: var(--c-submission-soft); }
 .badge-escape, .badge-transition { color: var(--on-neutral); background: var(--c-neutral-soft); }
 .node-meta { display: flex; flex-wrap: wrap; gap: var(--space-2); color: var(--muted); font-size: 0.82rem; }
-.node-meta span { display: inline-flex; align-items: center; }
-.node-meta span + span::before { content: ""; width: 3px; height: 3px; margin-right: var(--space-2); border-radius: 50%; background: var(--line-strong); }
+.node-meta > * { display: inline-flex; align-items: center; }
+.node-meta > * + *::before { content: ""; width: 3px; height: 3px; margin-right: var(--space-2); border-radius: 50%; background: var(--line-strong); }
+.node-meta .meta-link { position: relative; z-index: 1; gap: var(--space-1); font-weight: 750; text-decoration: none; }
 
 /* Node detail */
-.node-layout { display: grid; grid-template-areas: "overview" "connections" "instruction"; gap: var(--space-8); }
+.node-layout { display: grid; grid-template-areas: "overview" "connections-out" "instruction" "connections-in"; gap: var(--space-8); }
 .node-overview { grid-area: overview; } .node-instruction { grid-area: instruction; min-width: 0; }
-.connections { grid-area: connections; min-width: 0; }
+.connections-column { display: contents; }
+.connections { min-width: 0; }
+.connections-out { grid-area: connections-out; }
+.connections-in { grid-area: connections-in; }
 .node-description { max-width: 68ch; margin-top: var(--space-4); font-size: 1.05rem; }
 .aliases { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-4); font-size: 0.85rem; }
 .pill { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 0.15rem 0.6rem; background: var(--surface-soft); color: var(--ink); font-size: 0.8rem; }
@@ -228,7 +232,6 @@ button:active, .button:active { transform: translateY(1px); }
 }
 .facade iframe { width: 100%; height: auto; display: block; border: 0; aspect-ratio: 16 / 9; }
 .connections { padding: var(--space-5); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm); }
-.connections section + section { margin-top: var(--space-6); padding-top: var(--space-5); border-top: 1px solid var(--line); }
 .connections h2 { margin-bottom: var(--space-3); font-size: 1rem; }
 .connections ul { margin: 0; padding: 0; list-style: none; }
 .connection-item { position: relative; padding: var(--space-3) 0; border-bottom: 1px solid var(--line); }
@@ -237,8 +240,6 @@ button:active, .button:active { transform: translateY(1px); }
 .connection-label { display: inline-flex; margin-left: var(--space-2); padding: 0.08rem 0.42rem; border-radius: 999px; background: var(--surface-soft); color: var(--muted); font-size: 0.68rem; font-weight: 750; text-transform: lowercase; }
 .connection-item p { margin: var(--space-1) 0 0; color: var(--muted); font-size: 0.84rem; line-height: 1.45; }
 .connection-empty { padding: var(--space-2) 0; font-size: 0.86rem; }
-.graph-link { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 40px; margin-top: var(--space-4); font-size: 0.86rem; font-weight: 750; text-decoration: none; }
-
 /* Health and empty states */
 .health-section { margin-top: var(--space-6); padding: var(--space-5); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
 .health-section h2 { display: flex; align-items: center; gap: var(--space-2); }
@@ -247,9 +248,10 @@ button:active, .button:active { transform: translateY(1px); }
 .empty-state { margin: var(--space-3) 0 0; padding: var(--space-4); border-radius: var(--radius-md); background: var(--surface-soft); color: var(--muted); }
 
 /* Graph */
-.graph-body { overflow: hidden; }
-.graph-main { display: flex; min-height: calc(100dvh - 61px); flex-direction: column; }
+.graph-body { height: 100dvh; overflow: hidden; }
+.graph-main { display: flex; height: calc(100dvh - 61px); min-height: 0; flex-direction: column; overflow: hidden; }
 .graph-tools { position: relative; z-index: 4; border-bottom: 1px solid var(--line); background: var(--surface); }
+.graph-filters { position: relative; z-index: 4; flex: 0 0 auto; border-top: 1px solid var(--line); background: var(--surface); }
 .graph-tools-inner { width: min(100% - 2rem, var(--maxw)); margin-inline: auto; padding-block: var(--space-2); }
 .graph-summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; color: var(--ink); font-size: 0.85rem; font-weight: 750; }
 .graph-summary::marker { color: var(--accent); }
@@ -269,7 +271,7 @@ button:active, .button:active { transform: translateY(1px); }
 .graph-context { display: flex; flex-wrap: wrap; gap: var(--space-3); padding: 0 0 var(--space-2); color: var(--muted); font-size: 0.82rem; }
 .graph-context:empty { display: none; }
 .graph-context a { font-weight: 700; }
-#net { flex: 1 1 auto; min-height: 360px; background: var(--bg); }
+#net { flex: 1 1 0; min-height: 0; background: var(--bg); }
 
 @media (min-width: 720px) {
   .node-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -278,7 +280,7 @@ button:active, .button:active { transform: translateY(1px); }
 }
 @media (min-width: 940px) {
   .node-layout { grid-template-columns: minmax(0, 1fr) 330px; grid-template-areas: "overview connections" "instruction connections"; align-items: start; gap: var(--space-8) var(--space-10); }
-  .connections { position: sticky; top: 84px; max-height: calc(100dvh - 108px); overflow-y: auto; }
+  .connections-column { grid-area: connections; display: flex; position: sticky; top: 84px; max-height: calc(100dvh - 108px); flex-direction: column; gap: var(--space-4); overflow-y: auto; }
 }
 @media (max-width: 719px) {
   .wrap { width: min(100% - 1.5rem, var(--maxw)); }
@@ -300,7 +302,7 @@ button:active, .button:active { transform: translateY(1px); }
   #filters { max-height: 175px; overflow-y: auto; }
   .filter-group { align-items: flex-start; }
   .filter-chip { min-height: 44px; }
-  #net { min-height: 300px; }
+  #net { min-height: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

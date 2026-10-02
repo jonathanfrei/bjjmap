@@ -25,7 +25,7 @@
 <main class="graph-main">
   <section class="graph-tools" aria-label="Graph controls"><div class="graph-tools-inner">
     <details id="graph-options" open>
-      <summary class="graph-summary">Legend and filters</summary>
+      <summary class="graph-summary">Legend</summary>
       <div class="legend" aria-label="Node types">
         <span class="legend-item"><span class="dot dot-condition"></span>condition (points)</span>
         <span class="legend-item"><span class="dot dot-position"></span>position</span>
@@ -34,18 +34,26 @@
         <span class="legend-item"><span class="dot dot-neutral"></span>escape / transition</span>
         <span class="graph-help">Scroll or pinch to zoom. Select a node to open its page.</span>
       </div>
-      <div id="filters"></div>
     </details>
     <div id="graph-context" class="graph-context" aria-live="polite"></div>
   </div></section>
   <div id="net" role="img" aria-label="Interactive graph connecting BJJ positions and techniques"></div>
+  <section class="graph-filters" aria-label="Graph filters"><div class="graph-tools-inner">
+    <details id="graph-filters-panel" open>
+      <summary class="graph-summary">Phase and kind filters</summary>
+      <div id="filters"></div>
+    </details>
+  </div></section>
 </main>
 <script>
 (function(){
 var BASE = "__BASE__";
 var focus = new URLSearchParams(location.search).get('focus');
 var mobile = window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
-if (mobile) document.getElementById('graph-options').removeAttribute('open');
+if (mobile) {
+  document.getElementById('graph-options').removeAttribute('open');
+  document.getElementById('graph-filters-panel').removeAttribute('open');
+}
 
 function clean(s){ var d = document.createElement('div'); d.innerHTML = s || ''; return d.textContent || ''; }
 function css(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }

@@ -196,7 +196,9 @@ def node_body(base, n, vids, aliases, techs, incoming, outgoing):
         bits.append(
             f"scores as <a href='{u(base, '/node/')}{n['scores_as']}/'>"
             f"{html.escape(n['scores_as'])}</a>")
-    body = f"<div class=node-meta>{''.join(f'<span>{b}</span>' for b in bits)}</div>"
+    graph_url = f"{u(base, '/graph/')}?focus={n['id']}"
+    body = f"<div class=node-meta>{''.join(f'<span>{b}</span>' for b in bits)}" \
+        f"<a class=meta-link href='{graph_url}'>View in graph <span aria-hidden=true>↗</span></a></div>"
     if aliases:
         pills = "".join(
             f"<span class=pill>{html.escape(a['alias'])}</span>"
@@ -214,13 +216,13 @@ def node_body(base, n, vids, aliases, techs, incoming, outgoing):
     instruction += "".join(video_card(dict(v)) for v in vids) or \
         "<div class=empty-state>No videos yet — curation pending.</div>"
     instruction += "</section>"
-    connections = "<aside class=connections aria-label='Position connections'>"
-    connections += "<section><h2>Where you can go</h2><ul>"
-    connections += edge_list(base, outgoing, "to_node") + "</ul></section>"
-    connections += f"<a class=graph-link href='{u(base, '/graph/')}?focus={n['id']}'>" \
-        "<span aria-hidden=true>↗</span> View in graph</a>"
-    connections += "<section><h2>How you got here</h2><ul>"
-    connections += edge_list(base, incoming, "from_node") + "</ul></section></aside>"
+    outgoing_nav = "<aside class='connections connections-out' aria-label='Outgoing position connections'>"
+    outgoing_nav += "<h2>Where you can go</h2><ul>"
+    outgoing_nav += edge_list(base, outgoing, "to_node") + "</ul></aside>"
+    incoming_nav = "<aside class='connections connections-in' aria-label='Incoming position connections'>"
+    incoming_nav += "<h2>How you got here</h2><ul>"
+    incoming_nav += edge_list(base, incoming, "from_node") + "</ul></aside>"
+    connections = "<div class=connections-column>" + outgoing_nav + incoming_nav + "</div>"
     return ("<div class=node-layout>" + overview + connections + instruction +
             "</div>" + FACADE_JS)
 
