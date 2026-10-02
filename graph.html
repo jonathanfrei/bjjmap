@@ -2,143 +2,163 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="Interactive graph of the BJJ Map — positions, techniques, and submissions.">
+<meta name="theme-color" content="#f5f7fa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1118" media="(prefers-color-scheme: dark)">
 <title>BJJ Map — Graph</title>
+<script>(function(){try{var t=localStorage.getItem('bjjmap-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}})();</script>
 <link rel="icon" href="__BASE__/static/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="__BASE__/static/style.css">
-<style>
-  #net{height:calc(100vh - 220px);min-height:300px;background:var(--bg)}
-  #legend,#filters{padding:.4rem 1rem;color:var(--muted);font-size:.85rem}
-  #filters label{margin-right:.8em;white-space:nowrap}
-  #filters input{accent-color:var(--accent)}
-  .dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin:0 .3em 0 1em}
-</style>
 <script src="__BASE__/static/vis-network.min.js"></script>
-</head><body>
-<nav class="top"><a href="__BASE__/">Map</a><b>Graph</b><a href="__BASE__/health/">Health</a><span id="crumb" style="margin-left:1rem;color:var(--muted)"></span><span id="full" style="margin-left:1rem"></span></nav>
-<div id="legend">
-  <span class="dot" style="background:#f4b400"></span>condition (pts)
-  <span class="dot" style="background:#4285f4"></span>position
-  <span class="dot" style="background:#0f9d58"></span>technique
-  <span class="dot" style="background:#db4437"></span>submission
-  <span class="dot" style="background:#9e9e9e"></span>escape/transition
-  — scroll to zoom, click a node to open it
-</div>
-<div id="filters"></div>
-<div id="net"></div>
+</head><body class="graph-body">
+<header class="site-header"><div class="wrap nav-shell">
+  <a class="brand" href="__BASE__/" aria-label="BJJ Map home">
+    <span class="brand-mark" aria-hidden="true"><span></span></span>
+    <span class="brand-name">BJJ Map</span><span class="brand-tag">No-Gi</span>
+  </a>
+  <nav class="primary-nav" aria-label="Primary">
+    <a class="nav-link" href="__BASE__/">Map</a>
+    <a class="nav-link" href="__BASE__/graph/" aria-current="page">Graph</a>
+    <a class="nav-link" href="__BASE__/health/">Health</a>
+  </nav>
+  <button class="theme-toggle" type="button" aria-label="Change color theme" title="Change color theme"><span aria-hidden="true"></span><span class="theme-label">Theme</span></button>
+</div></header>
+<main class="graph-main">
+  <section class="graph-tools" aria-label="Graph controls"><div class="graph-tools-inner">
+    <details id="graph-options" open>
+      <summary class="graph-summary">Legend and filters</summary>
+      <div class="legend" aria-label="Node types">
+        <span class="legend-item"><span class="dot dot-condition"></span>condition (points)</span>
+        <span class="legend-item"><span class="dot dot-position"></span>position</span>
+        <span class="legend-item"><span class="dot dot-technique"></span>technique</span>
+        <span class="legend-item"><span class="dot dot-submission"></span>submission</span>
+        <span class="legend-item"><span class="dot dot-neutral"></span>escape / transition</span>
+        <span class="graph-help">Scroll or pinch to zoom. Select a node to open its page.</span>
+      </div>
+      <div id="filters"></div>
+    </details>
+    <div id="graph-context" class="graph-context" aria-live="polite"></div>
+  </div></section>
+  <div id="net" role="img" aria-label="Interactive graph connecting BJJ positions and techniques"></div>
+</main>
 <script>
 (function(){
 var BASE = "__BASE__";
-var COLORS = {condition:'#f4b400', position:'#4285f4', technique:'#0f9d58',
-              submission:'#db4437', escape:'#9e9e9e', transition:'#9e9e9e'};
 var focus = new URLSearchParams(location.search).get('focus');
-// Strip any HTML before handing text to vis tooltips (XSS fence).
+var mobile = window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
+if (mobile) document.getElementById('graph-options').removeAttribute('open');
+
 function clean(s){ var d = document.createElement('div'); d.innerHTML = s || ''; return d.textContent || ''; }
+function css(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function palette(){
+  return {
+    condition: {background: css('--graph-condition'), ink: css('--graph-condition-ink')},
+    position: {background: css('--graph-position'), ink: css('--graph-position-ink')},
+    technique: {background: css('--graph-technique'), ink: css('--graph-technique-ink')},
+    submission: {background: css('--graph-submission'), ink: css('--graph-submission-ink')},
+    escape: {background: css('--graph-neutral'), ink: css('--graph-neutral-ink')},
+    transition: {background: css('--graph-neutral'), ink: css('--graph-neutral-ink')}
+  };
+}
+
 fetch(BASE + '/api/graph.json').then(function(r){ return r.json(); }).then(function(g){
-  // Neighborhood mode: with ?focus=X, show only X plus its direct neighbors.
   var keep = null;
+  var context = document.getElementById('graph-context');
   if (focus) {
-    keep = {};
-    keep[focus] = true;
+    keep = {}; keep[focus] = true;
     g.edges.forEach(function(e){
       if (e.from_node === focus) keep[e.to_node] = true;
       if (e.to_node === focus) keep[e.from_node] = true;
     });
-    var full = document.getElementById('full');
-    var a0 = document.createElement('a');
-    a0.href = BASE + '/graph/';
-    a0.textContent = 'show full graph';
-    full.appendChild(a0);
+    var focusedNode = g.nodes.find(function(n){ return n.id === focus; });
+    var label = document.createElement('span');
+    label.textContent = 'Centered on ' + (focusedNode ? focusedNode.name : focus);
+    context.appendChild(label);
+    var open = document.createElement('a'); open.href = BASE + '/node/' + encodeURIComponent(focus) + '/'; open.textContent = 'Open page'; context.appendChild(open);
+    var full = document.createElement('a'); full.href = BASE + '/graph/'; full.textContent = 'Show full graph'; context.appendChild(full);
   }
   var fnodes = keep ? g.nodes.filter(function(n){ return keep[n.id]; }) : g.nodes;
   var fedges = keep ? g.edges.filter(function(e){ return keep[e.from_node] && keep[e.to_node]; }) : g.edges;
-  var phases = {};
-  fnodes.forEach(function(n){ phases[n.phase || 'other'] = true; });
-  var kinds = {};
-  fnodes.forEach(function(n){ kinds[n.kind] = true; });
+  var phases = {}, kinds = {};
+  fnodes.forEach(function(n){ phases[n.phase || 'other'] = true; kinds[n.kind] = true; });
   var box = document.getElementById('filters');
-  function group(title, keys, active){
-    var s = document.createElement('span');
-    s.innerHTML = '<b>' + title + ':</b> ';
+  function group(title, keys){
+    var groupBox = document.createElement('div'); groupBox.className = 'filter-group';
+    var heading = document.createElement('span'); heading.className = 'filter-title'; heading.textContent = title + ':'; groupBox.appendChild(heading);
     keys.sort().forEach(function(k){
-      var lab = document.createElement('label');
-      var cb = document.createElement('input');
-      cb.type = 'checkbox'; cb.checked = true; cb.dataset.group = title; cb.value = k;
-      cb.onchange = apply;
-      lab.appendChild(cb);
-      lab.appendChild(document.createTextNode(' ' + k));
-      s.appendChild(lab);
+      var lab = document.createElement('label'); lab.className = 'filter-chip';
+      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = true; cb.dataset.group = title; cb.value = k; cb.onchange = apply;
+      lab.appendChild(cb); lab.appendChild(document.createTextNode(k)); groupBox.appendChild(lab);
     });
-    box.appendChild(s);
+    box.appendChild(groupBox);
   }
-  group('phase', Object.keys(phases));
-  group('kind', Object.keys(kinds));
+  group('phase', Object.keys(phases)); group('kind', Object.keys(kinds));
+
+  var colors = palette();
   var nodes = new vis.DataSet(fnodes.map(function(n){
+    var color = colors[n.kind] || {background: css('--graph-neutral'), ink: css('--graph-neutral-ink')};
     return {
-      id: n.id, label: n.name + (n.points ? ' (' + n.points + ')' : ''),
-      title: clean(n.description || n.name),
-      color: COLORS[n.kind] || '#ccc', phase: n.phase || 'other', kind: n.kind,
-      hidden: false,
-      size: n.kind === 'condition' ? 30 : n.kind === 'technique' ? 16 : 22,
-      font: {size: 12}
+      id: n.id, label: n.name + (n.points ? ' (' + n.points + ')' : ''), title: clean(n.description || n.name),
+      color: {background: color.background, border: color.background, highlight: {background: color.background, border: css('--ink')}},
+      font: {size: mobile ? 13 : 12, color: color.ink}, phase: n.phase || 'other', kind: n.kind, hidden: false,
+      size: n.kind === 'condition' ? 30 : n.kind === 'technique' ? 17 : 23
     };
   }));
   var edges = new vis.DataSet(fedges.map(function(e, i){
-    return {id: i, from: e.from_node, to: e.to_node, label: e.label,
-      arrows: 'to', font: {size: 9, strokeWidth: 3, strokeColor: '#fff'},
-      color: {opacity: 0.45}, smooth: {type: 'continuous'}};
+    return {id: i, from: e.from_node, to: e.to_node, label: mobile ? '' : e.label, fullLabel: e.label,
+      arrows: 'to', font: {size: 9, color: css('--muted'), strokeWidth: 3, strokeColor: css('--bg')},
+      color: {color: css('--line-strong'), opacity: 0.58}, smooth: {type: 'continuous'}};
   }));
   function apply(){
     var on = {};
-    box.querySelectorAll('input').forEach(function(cb){
-      on[cb.dataset.group + ':' + cb.value] = cb.checked;
-    });
-    var visIds = [];
+    box.querySelectorAll('input').forEach(function(cb){ on[cb.dataset.group + ':' + cb.value] = cb.checked; });
+    var visible = {};
     nodes.forEach(function(n){
       var show = on['phase:' + n.phase] !== false && on['kind:' + n.kind] !== false;
-      nodes.update({id: n.id, hidden: !show});
-      if (show) visIds.push(n.id);
+      nodes.update({id: n.id, hidden: !show}); if (show) visible[n.id] = true;
     });
-    var visSet = {};
-    visIds.forEach(function(id){ visSet[id] = true; });
-    edges.forEach(function(e){
-      edges.update({id: e.id, hidden: !(visSet[e.from] && visSet[e.to])});
+    edges.forEach(function(e){ edges.update({id: e.id, hidden: !(visible[e.from] && visible[e.to])}); });
+  }
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var physics = {barnesHut: {gravitationalConstant: -2500, centralGravity: 0.6, springLength: 90, springConstant: 0.06, damping: 0.85, avoidOverlap: 0.6}, minVelocity: 0.5, maxVelocity: 8, stabilization: {enabled: true, iterations: 400, updateInterval: 25, fit: true}};
+  var net = new vis.Network(document.getElementById('net'), {nodes: nodes, edges: edges}, {
+    physics: physics,
+    interaction: {hover: true, navigationButtons: false}, nodes: {shape: 'ellipse', borderWidth: 0}
+  });
+  var graphReady = false;
+  function finishLayout(){
+    if (graphReady) return;
+    graphReady = true;
+    net.setOptions({physics: {enabled: false}});
+    net.fit({maxZoomLevel: mobile ? 2.4 : 3.2, animation: false});
+    if (focus && nodes.get(focus)) {
+      net.selectNodes([focus]);
+      net.focus(focus, {scale: 1.1, animation: reduced ? false : {duration: 450}});
+    }
+  }
+  net.once('stabilized', finishLayout);
+  if (mobile) {
+    var edgeLabelsVisible = false;
+    net.on('zoom', function(p){
+      var show = p.scale > 0.72;
+      if (show === edgeLabelsVisible) return;
+      edgeLabelsVisible = show;
+      edges.forEach(function(e){ edges.update({id: e.id, label: show ? e.fullLabel : ''}); });
     });
   }
-  var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var net = new vis.Network(document.getElementById('net'), {nodes: nodes, edges: edges}, {
-    nodes: {font: {color: dark ? '#ececea' : '#1a1a18'}},
-    edges: {font: {color: dark ? '#ececea' : '#1a1a18'}},
-    physics: reduced ? false : {
-      barnesHut: {gravitationalConstant: -2500, centralGravity: 0.6,
-                  springLength: 90, springConstant: 0.06,
-                  damping: 0.85, avoidOverlap: 0.6},
-      minVelocity: 0.5, maxVelocity: 8, stabilization: {iterations: 400}
-    },
-    interaction: {hover: true}
+  net.on('click', function(p){ if (p.nodes.length) location.href = BASE + '/node/' + encodeURIComponent(p.nodes[0]) + '/'; });
+  window.addEventListener('bjjmap-themechange', function(){
+    colors = palette();
+    nodes.forEach(function(n){
+      var color = colors[n.kind] || {background: css('--graph-neutral'), ink: css('--graph-neutral-ink')};
+      nodes.update({id: n.id, color: {background: color.background, border: color.background, highlight: {background: color.background, border: css('--ink')}}, font: {size: mobile ? 13 : 12, color: color.ink}});
+    });
+    edges.forEach(function(e){ edges.update({id: e.id, font: {size: 9, color: css('--muted'), strokeWidth: 3, strokeColor: css('--bg')}, color: {color: css('--line-strong'), opacity: 0.58}}); });
   });
-  net.once('stabilized', function(){
-    net.fit({animation: {duration: 400}});
-    if (focus && nodes.get(focus)) {
-      try {
-        net.selectNodes([focus]);
-        net.focus(focus, {scale: 1.1, animation: {duration: 600}});
-      } catch (err) {}
-      var n = null;
-      g.nodes.forEach(function(x){ if (x.id === focus) n = x; });
-      var crumb = document.getElementById('crumb');
-      crumb.innerHTML = 'centered on <b></b> ';
-      crumb.querySelector('b').textContent = n ? n.name : focus;
-      var a = document.createElement('a');
-      a.href = BASE + '/node/' + focus + '/';
-      a.textContent = 'open page';
-      crumb.appendChild(a);
-    }
-  });
-  net.on('click', function(p){
-    if (p.nodes.length) location.href = BASE + '/node/' + p.nodes[0] + '/';
-  });
+}).catch(function(){
+  var context = document.getElementById('graph-context');
+  context.textContent = 'The graph could not be loaded. Try refreshing the page.';
 });
 })();
 </script>
+<script src="__BASE__/static/theme.js"></script>
 </body></html>

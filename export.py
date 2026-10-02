@@ -61,7 +61,7 @@ def main():
               f.read().replace("__BASE__", base))
     write(out, "health/index.html", render.page(
         base, "Map health",
-        render.coverage_body(base, store.coverage(c))))
+        render.coverage_body(base, store.coverage(c)), active="health"))
 
     write(out, "api/graph.json",
           json.dumps(store.graph_data(c)).encode())
@@ -92,7 +92,8 @@ def main():
                              f"Sitemap: {site}/sitemap.xml\n")
     write(out, "404.html", render.page(
         base, "Not found",
-        f"<p>Unknown path. <a href='{render.u(base, '/')}'>Back to the map</a>.</p>"))
+        f"<p>Unknown path. <a href='{render.u(base, '/')}'>Back to the map</a>.</p>",
+        active=""))
     c.close()
     print(f"exported {len(nodes)} nodes to {out} (base={base or '/'})")
 
