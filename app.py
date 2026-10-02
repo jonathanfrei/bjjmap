@@ -72,10 +72,11 @@ class H(BaseHTTPRequestHandler):
                     return
                 self.send(200, render.page(
                     BASE_PATH, "Map health",
-                    render.coverage_body(BASE_PATH, store.coverage(c))))
+                    render.coverage_body(BASE_PATH, store.coverage(c)),
+                    active="health"))
             else:
                 self.send(404, render.page(
-                    BASE_PATH, "Not found", "<p>Unknown path.</p>"))
+                    BASE_PATH, "Not found", "<p>Unknown path.</p>", active=""))
         finally:
             c.close()
 
@@ -83,7 +84,7 @@ class H(BaseHTTPRequestHandler):
         n = store.get_node(c, nid)
         if not n:
             self.send(404, render.page(
-                BASE_PATH, "Not found", "<p>Unknown node.</p>"))
+                BASE_PATH, "Not found", "<p>Unknown node.</p>", active=""))
             return
         vids = store.videos_for(c, nid)
         body = render.node_body(
@@ -100,7 +101,7 @@ class H(BaseHTTPRequestHandler):
         if parts[0] != "static" or not full.startswith(allowed) \
                 or not os.path.isfile(full):
             self.send(404, render.page(
-                BASE_PATH, "Not found", "<p>Unknown path.</p>"))
+                BASE_PATH, "Not found", "<p>Unknown path.</p>", active=""))
             return
         ext = os.path.splitext(full)[1]
         with open(full, "rb") as f:

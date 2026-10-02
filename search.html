@@ -2,14 +2,36 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="Search the BJJ Map — positions, techniques, and submissions.">
+<meta name="theme-color" content="#f5f7fa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1118" media="(prefers-color-scheme: dark)">
 <title>BJJ Map — Search</title>
+<script>(function(){try{var t=localStorage.getItem('bjjmap-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}})();</script>
 <link rel="icon" href="__BASE__/static/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="__BASE__/static/style.css">
 </head><body>
-<nav><a href="__BASE__/">Map</a><a href="__BASE__/graph/">Graph</a><a href="__BASE__/health/">Health</a></nav>
-<h1>Search</h1>
-<input id="q" placeholder="Search positions, techniques…" style="width:70%" maxlength="120" autocomplete="off">
-<p id="count" style="color:#666"></p>
-<div id="hits"></div>
+<header class="site-header"><div class="wrap nav-shell">
+  <a class="brand" href="__BASE__/" aria-label="BJJ Map home">
+    <span class="brand-mark" aria-hidden="true"><span></span></span>
+    <span class="brand-name">BJJ Map</span><span class="brand-tag">No-Gi</span>
+  </a>
+  <nav class="primary-nav" aria-label="Primary">
+    <a class="nav-link" href="__BASE__/" aria-current="page">Map</a>
+    <a class="nav-link" href="__BASE__/graph/">Graph</a>
+    <a class="nav-link" href="__BASE__/health/">Health</a>
+  </nav>
+  <button class="theme-toggle" type="button" aria-label="Change color theme" title="Change color theme"><span aria-hidden="true"></span><span class="theme-label">Theme</span></button>
+</div></header>
+<main class="wrap page-main">
+  <h1>Search the map</h1>
+  <form id="search-form" class="search-form" role="search">
+    <label class="sr-only" for="q">Search positions and techniques</label>
+    <span class="search-icon" aria-hidden="true"></span>
+    <input id="q" name="q" placeholder="Search positions, techniques…" maxlength="120" autocomplete="off">
+    <button type="submit">Search</button>
+  </form>
+  <p id="count" class="result-count muted" aria-live="polite"></p>
+  <div id="hits" class="node-grid"></div>
+</main>
 <script>
 (function(){
 var BASE = "__BASE__";
@@ -27,31 +49,32 @@ function rank(it, q){
   if ((it.description || '').toLowerCase().indexOf(q) > -1) return 4;
   return 5;
 }
-function render(){
-  var q = input.value.trim().toLowerCase().slice(0, 120);
-  if (!q) { hits.innerHTML = ''; count.textContent = ''; return; }
-  var scored = [];
-  items.forEach(function(it){
-    var r = rank(it, q);
-    if (r < 5) scored.push([r, it]);
-  });
-  scored.sort(function(a, b){ return a[0] - b[0] || (a[1].name < b[1].name ? -1 : 1); });
-  count.textContent = scored.length + ' result(s)';
-  hits.innerHTML = scored.map(function(pair){
-    var it = pair[1];
-    return '<div style="border:1px solid #ddd;border-radius:8px;padding:1rem;margin:1rem 0">' +
-      '<a href="' + BASE + '/node/' + encodeURIComponent(it.id) + '/"><b>' + esc(it.name) + '</b></a> ' +
-      '<span style="color:#666">' + esc(it.kind) + ' · ' + esc(it.side) + '</span><br>' +
-      esc(it.description || '') + '</div>';
-  }).join('');
+function card(it){
+  var meta = it.side && it.side !== 'na' ? '<span>' + esc(it.side) + '</span>' : '';
+  return '<article class="node-card kind-' + esc(it.kind) + '">' +
+    '<span class="badge badge-' + esc(it.kind) + '">' + esc(it.kind) + '</span>' +
+    '<h3><a class="card-link" href="' + BASE + '/node/' + encodeURIComponent(it.id) + '/">' + esc(it.name) + '</a></h3>' +
+    '<div class="node-meta">' + meta + '</div><p>' + esc(it.description || '') + '</p></article>';
 }
-var params = new URLSearchParams(location.search);
-if (params.get('q')) { input.value = params.get('q').slice(0, 120); }
-fetch(BASE + '/api/search-index.json').then(function(r){ return r.json(); }).then(function(data){
-  items = data;
-  render();
+function render(){
+  var raw = input.value.trim().slice(0, 120);
+  var q = raw.toLowerCase();
+  if (!q) { hits.innerHTML = ''; count.textContent = 'Start typing to find a position or technique.'; return; }
+  var scored = [];
+  items.forEach(function(it){ var r = rank(it, q); if (r < 5) scored.push([r, it]); });
+  scored.sort(function(a, b){ return a[0] - b[0] || (a[1].name < b[1].name ? -1 : 1); });
+  count.textContent = scored.length ? scored.length + ' result' + (scored.length === 1 ? '' : 's') + ' for “' + raw + '”' : 'No results for “' + raw + '”';
+  hits.innerHTML = scored.map(function(pair){ return card(pair[1]); }).join('');
+}
+document.getElementById('search-form').addEventListener('submit', function(event){
+  event.preventDefault();
+  var url = new URL(location.href); url.searchParams.set('q', input.value.trim().slice(0, 120)); history.replaceState(null, '', url); render();
 });
+var params = new URLSearchParams(location.search);
+if (params.get('q')) input.value = params.get('q').slice(0, 120);
+fetch(BASE + '/api/search-index.json').then(function(r){ return r.json(); }).then(function(data){ items = data; render(); }).catch(function(){ count.textContent = 'Search could not be loaded. Try refreshing the page.'; });
 input.addEventListener('input', render);
 })();
 </script>
+<script src="__BASE__/static/theme.js"></script>
 </body></html>
