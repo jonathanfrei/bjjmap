@@ -52,6 +52,15 @@
   don't go looking for toreando in the PDF.
 - Videos: agent inserts directly, no approval gate; owner vetoes via
   `rejected=1`. `rule_set` defaults to `nogi`. `youtube_id` = 11-char ID only.
+- **Rule of three: every node page has >=3 videos** (counting `rejected=0`).
+  New nodes ship with 3 curated videos or the node is incomplete. When adding
+  a video to one side of a position, check the mirror side still clears 3.
+  Check with:
+  `sqlite3 bjj.db "SELECT n.id FROM nodes n LEFT JOIN videos v ON v.node_id=n.id AND v.rejected=0 GROUP BY n.id HAVING COUNT(v.id)<3"`
+  Curation runs in parallel batches: agents write `out_NN.sql` files
+  (`INSERT OR IGNORE INTO videos ...`, `source='agent:videos-3plus'`) which are
+  applied together in one transaction — never let agents write the DB directly.
+  Verify IDs with the oEmbed helper before inserting.
 - Keep styling minimal — design system comes later.
 - `seed.py` is the POC seed; later seeds used inline `sqlite3` heredocs.
   Prefer idempotent SQL (`INSERT OR IGNORE`) so re-runs are safe.
