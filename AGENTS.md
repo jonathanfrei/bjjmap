@@ -7,10 +7,11 @@
 - Private preview (tailnet only): `https://omarchy.tail44804f.ts.net/`
 - Public site: `https://jonathanfrei.github.io/bjjmap/` (Pages, auto-deployed)
 - Shell quirk: `HOME` is unset in tool shells — `export HOME=/home/jfrei`
-  first, or `gh`/git-credential can't find auth. The `gh` binary lives at
-  `~/.local/share/mise/installs/gh/2.101.0/gh_2.101.0_linux_amd64/bin/gh`;
-  if git push fails on credentials, reset the helper to that path
-  (a stale mise `latest` symlink broke it once).
+  first, or `gh`/git-credential can't find auth. `gh` resolves on PATH
+  (`~/.local/bin/gh`, currently mise `2.102.x`); if `git push` fails on
+  credentials, point the helper at the live mise install under
+  `~/.local/share/mise/installs/gh/<version>/...` (a stale mise `latest`
+  symlink broke it once, and the version bumps).
 - Python 3.14, **no pip** (`No module named pip`), no venv. Stdlib only:
   `sqlite3`, `http.server`. Do NOT add dependencies without asking.
 - PDF tools available: `pdftotext` etc. (poppler). `python3` is NOT on the
@@ -66,6 +67,19 @@
   slugs need `trigger_taxonomy` rows or `verify.py --strict` fails.
   Multi-agent rules live in CURATION.md (disjoint ownership, video pools).
 - Keep styling minimal — design system comes later.
+- Trigger text is base-verb so it reads inside "If they …" headings
+  (`hug to defend`, `grapevine`) — vocabulary v2, frozen in
+  `migrations/009_trigger_base_verbs.sql`; the rubric is in CURATION.md.
+  If you ever rename trigger slugs again, normalize the historical
+  `out_*.sql` packets in the same commit or their `INSERT OR IGNORE`
+  re-runs break idempotency (v1 slugs re-insert beside v2 rows).
+- Armbar submissions are position-specific nodes (`armbar_mount`,
+  `armbar_guard`, `armbar_side`, `armbar_back`) — distinct setups are
+  distinct nodes per CURATION.md; don't collapse them later.
+- Packet/migration bookkeeping: content packets are `out_NN_*.sql`
+  (numbered; last used `11`), schema/vocabulary history is
+  `migrations/` (last used `009`). `stage_packet.sh` takes any path, so
+  a migration + packet can be staged as one concatenated batch.
 - `seed.py` is the POC seed; later seeds used inline `sqlite3` heredocs.
   Prefer idempotent SQL (`INSERT OR IGNORE`) so re-runs are safe.
 - Run `./backup.sh` before any curation batch. `backups/` holds .db + .sql.
