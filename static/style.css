@@ -238,8 +238,16 @@ button:active, .button:active { transform: translateY(1px); }
 .connection-item:last-child { border-bottom: 0; }
 .connection-item > a { font-weight: 750; text-decoration: none; }
 .connection-label { display: inline-flex; margin-left: var(--space-2); padding: 0.08rem 0.42rem; border-radius: 999px; background: var(--surface-soft); color: var(--muted); font-size: 0.68rem; font-weight: 750; text-transform: lowercase; }
+.connection-trigger { display: inline-flex; margin-left: var(--space-2); padding: 0.08rem 0.42rem; border-radius: 999px; background: color-mix(in srgb, var(--accent) 12%, var(--surface)); color: var(--accent); font-size: 0.68rem; font-weight: 750; }
 .connection-item p { margin: var(--space-1) 0 0; color: var(--muted); font-size: 0.84rem; line-height: 1.45; }
 .connection-empty { padding: var(--space-2) 0; font-size: 0.86rem; }
+/* If/then reactions: opponent-action groups on outgoing connections */
+.reaction-nav { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-3) 0 var(--space-2); }
+.reaction-chip { display: inline-flex; align-items: center; min-height: 2rem; padding: 0 0.7rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-soft); color: var(--ink); font-size: 0.78rem; font-weight: 700; text-decoration: none; }
+.reaction-chip:hover { border-color: var(--accent); }
+.reaction-always, .reaction-group { scroll-margin-top: 84px; }
+.reaction-always > h3, .reaction-group > h3 { margin: var(--space-3) 0 0; font-size: 0.86rem; }
+.reaction-group:target > h3, .reaction-group.reaction-active > h3 { color: var(--accent); }
 /* Health and empty states */
 .health-section { margin-top: var(--space-6); padding: var(--space-5); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
 .health-section h2 { display: flex; align-items: center; gap: var(--space-2); }

@@ -51,9 +51,12 @@ def edges_in(c, nid):
 
 
 def edges_out(c, nid):
+    # Unconditional edges first, then grouped by reaction trigger.
+    # trigger_norm='' sorts via the (trigger_norm='') DESC key.
     return c.execute(
         "SELECT e.*, n.name FROM edges e JOIN nodes n ON n.id=e.to_node "
-        "WHERE e.from_node=? ORDER BY n.name",
+        "WHERE e.from_node=? ORDER BY (e.trigger_norm='') DESC, "
+        "e.trigger_norm, n.name",
         (nid,),
     ).fetchall()
 
@@ -89,7 +92,8 @@ def graph_data(c):
 def coverage(c):
     """Map-health report: missing edges, bare conditions, stale videos."""
     report = {"no_incoming": [], "no_outgoing": [],
-              "bare_conditions": [], "no_videos": [], "stale_videos": []}
+              "bare_conditions": [], "no_videos": [], "stale_videos": [],
+              "subs_without_answers": []}
     nodes = all_nodes(c)
     for n in nodes:
         nid = n["id"]
@@ -115,4 +119,11 @@ def coverage(c):
     for v in c.execute("SELECT node_id, youtube_id, title FROM videos "
                        "WHERE stale=1 AND rejected=0"):
         report["stale_videos"].append(dict(v))
+    for s in c.execute("SELECT id FROM nodes WHERE kind='submission'"):
+        has_answer = c.execute(
+            "SELECT 1 FROM edges WHERE from_node=? "
+            "AND trigger_norm IS NOT NULL AND trigger_norm<>''",
+            (s["id"],)).fetchone()
+        if not has_answer:
+            report["subs_without_answers"].append(s["id"])
     return report

@@ -18,7 +18,8 @@ KNOWN_REUSE = {
 
 # Techniques that are setups/defense, not scoring paths: allowed to have
 # scores_as NULL. Everything else of kind=technique must anchor to a condition.
-UNANCHORED_OK = {"arm_drag", "snapdown", "sprawl", "guard_break"}
+UNANCHORED_OK = {"arm_drag", "snapdown", "sprawl", "guard_break",
+                 "gift_wrap"}
 
 errors, warnings = [], []
 
@@ -59,9 +60,16 @@ def main():
                 check(n["scores_as"] in node_ids,
                       f"{n['id']}: scores_as dangles ({n['scores_as']})")
             if n["is_terminal"]:
-                out = c.execute("SELECT 1 FROM edges WHERE from_node=?",
-                                (n["id"],)).fetchone()
-                check(not out, f"{n['id']}: terminal node has outgoing edge")
+                # Terminal = successful finish needs no navigation. Outgoing
+                # edges are legal only as conditioned answers: every one must
+                # carry a trigger (failed/defended attempt -> next action).
+                # Unconditional exits off a terminal are still an error.
+                out_plain = c.execute(
+                    "SELECT 1 FROM edges WHERE from_node=? "
+                    "AND (trigger_norm IS NULL OR trigger_norm='')",
+                    (n["id"],)).fetchone()
+                check(not out_plain,
+                      f"{n['id']}: terminal node has untriggered outgoing edge")
             nv = c.execute("SELECT count(*) FROM videos "
                            "WHERE node_id=? AND rejected=0",
                            (n["id"],)).fetchone()[0]
@@ -74,6 +82,19 @@ def main():
                   f"edge {e['id']}: orphan from {e['from_node']}")
             check(e["to_node"] in node_ids,
                   f"edge {e['id']}: orphan to {e['to_node']}")
+            has_t = bool((e["trigger"] or "").strip())
+            has_n = bool((e["trigger_norm"] or "").strip())
+            check(has_t == has_n,
+                  f"edge {e['id']}: trigger/trigger_norm must be set together")
+            if has_n:
+                import re as _re
+                check(bool(_re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*",
+                                         e["trigger_norm"] or "")),
+                      f"edge {e['id']}: bad trigger_norm "
+                      f"{e['trigger_norm']!r} (lowercase slug, hyphens)")
+                check((e["description"] or "").strip(),
+                      f"edge {e['id']}: triggered edge needs a description "
+                      f"(why the reaction opens it)")
         for v in c.execute("SELECT * FROM videos WHERE rejected=0"):
             check(len(v["youtube_id"]) == 11,
                   f"video {v['id']}: bad youtube_id {v['youtube_id']!r}")

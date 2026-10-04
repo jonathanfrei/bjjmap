@@ -39,7 +39,9 @@ CREATE TABLE edges (
   label TEXT NOT NULL,
   description TEXT NOT NULL DEFAULT '',
   source TEXT NOT NULL DEFAULT '',
-  UNIQUE(from_node, to_node, label)
+  trigger TEXT NOT NULL DEFAULT '',
+  trigger_norm TEXT NOT NULL DEFAULT '',
+  UNIQUE(from_node, to_node, label, trigger_norm)
 );
 CREATE INDEX idx_edges_from ON edges(from_node);
 CREATE INDEX idx_edges_to ON edges(to_node);
