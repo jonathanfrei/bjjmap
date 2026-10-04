@@ -72,6 +72,7 @@ def main():
             "side": n["side"], "description": n["description"] or "",
             "aliases": [a["alias"]
                         for a in store.aliases_for(c, n["id"])],
+            "triggers": store.triggers_for(c, n["id"]),
         })
     write(out, "api/search-index.json", json.dumps(index).encode())
 

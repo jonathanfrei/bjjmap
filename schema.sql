@@ -46,6 +46,13 @@ CREATE TABLE edges (
 CREATE INDEX idx_edges_from ON edges(from_node);
 CREATE INDEX idx_edges_to ON edges(to_node);
 
+-- Controlled if/then vocabulary: every edges.trigger_norm must exist here.
+CREATE TABLE trigger_taxonomy (
+  slug TEXT PRIMARY KEY,
+  family TEXT NOT NULL,
+  display TEXT NOT NULL
+);
+
 CREATE TABLE node_aliases (
   alias TEXT PRIMARY KEY,
   node_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,

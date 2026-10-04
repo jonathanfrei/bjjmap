@@ -9,7 +9,9 @@ ROLE_ORDER = {"concept": 0, "howto": 1, "troubleshoot": 2}
 
 
 def connect():
-    c = sqlite3.connect(DB)
+    # BJJ_DB overrides the live DB so packets can be staged and verified
+    # against a copy (see stage_packet.sh) without touching live content.
+    c = sqlite3.connect(os.environ.get("BJJ_DB", DB))
     c.row_factory = sqlite3.Row
     return c
 
@@ -75,9 +77,18 @@ def search(c, term):
         "SELECT DISTINCT n.* FROM nodes n "
         "LEFT JOIN node_aliases a ON a.node_id=n.id "
         "WHERE n.name LIKE ? OR n.id LIKE ? OR n.description LIKE ? "
-        "OR a.alias LIKE ? ORDER BY n.name",
-        (like, like, like, like),
+        "OR a.alias LIKE ? OR EXISTS (SELECT 1 FROM edges e "
+        "WHERE e.from_node=n.id AND (e.trigger LIKE ? "
+        "OR e.trigger_norm LIKE ?)) ORDER BY n.name",
+        (like, like, like, like, like, like),
     ).fetchall()
+
+
+def triggers_for(c, nid):
+    """Distinct opponent-reaction triggers on this node's outgoing edges."""
+    return [r["trigger"] for r in c.execute(
+        "SELECT DISTINCT trigger FROM edges WHERE from_node=? "
+        "AND trigger_norm<>'' ORDER BY trigger", (nid,))]
 
 
 def graph_data(c):
@@ -126,4 +137,17 @@ def coverage(c):
             (s["id"],)).fetchone()
         if not has_answer:
             report["subs_without_answers"].append(s["id"])
+    report["trigger_stats"] = {
+        "nodes_with_triggers": c.execute(
+            "SELECT COUNT(DISTINCT from_node) FROM edges "
+            "WHERE trigger_norm<>''").fetchone()[0],
+        "triggered_edges": c.execute(
+            "SELECT COUNT(*) FROM edges "
+            "WHERE trigger_norm<>''").fetchone()[0],
+        "taxonomy_slugs": c.execute(
+            "SELECT COUNT(*) FROM trigger_taxonomy").fetchone()[0],
+        "subs_total": c.execute(
+            "SELECT COUNT(*) FROM nodes "
+            "WHERE kind='submission'").fetchone()[0],
+    }
     return report
