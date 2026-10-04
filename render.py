@@ -20,6 +20,22 @@ FACADE_JS = (
 
 ROLE_ORDER = {"concept": 0, "howto": 1, "troubleshoot": 2}
 
+# Progressive enhancement for if/then groups: highlights the group targeted
+# by #trigger-<slug>. Works with JS off (all groups visible, chips are
+# plain anchors, so the static export behaves identically).
+REACTION_JS = (
+    "<script>"
+    "(function(){"
+    "function mark(){"
+    "var id=(location.hash||'').slice(1);"
+    "document.querySelectorAll('.reaction-group').forEach(function(g){"
+    "g.classList.toggle('reaction-active',!!id&&g.id===id);});"
+    "}"
+    "window.addEventListener('hashchange',mark);mark();"
+    "})();"
+    "</script>"
+)
+
 # Tokens verify.py requires in static/style.css (single source of truth).
 TOKENS = [
     "--bg", "--surface", "--surface-raised", "--ink", "--muted", "--line",
@@ -138,16 +154,83 @@ def video_card(v):
     )
 
 
-def edge_list(base, rows, col):
+def dedupe_links(rows, key):
+    """Drop the unconditional row when the same link also has a triggered
+    variant. The If-section version (with its causality description) wins;
+    links that exist only unconditionally are kept as-is.
+    """
+    seen_triggered = set()
+    for r in rows:
+        if (r["trigger_norm"] or "").strip():
+            seen_triggered.add(key(r))
+    return [r for r in rows
+            if (r["trigger_norm"] or "").strip() or key(r) not in seen_triggered]
+
+
+def outgoing_section(base, outgoing):
+    """Outgoing connections, grouped by opponent reaction.
+
+    Rows with trigger_norm='' render exactly as the legacy flat list, so
+    pages without reactions are byte-identical to before. Pages with
+    reactions get an "Always available" group (links that exist ONLY
+    unconditionally) plus one "If they…" group per trigger
+    (store.edges_out already orders them). A link present in both forms
+    renders only in its If-section — no duplicates.
+    """
+    outgoing = dedupe_links(outgoing, lambda r: (r["to_node"], r["label"]))
+    groups = []  # [(norm, trigger, rows)] in first-seen order
+    plain = []
+    for r in outgoing:
+        norm = (r["trigger_norm"] or "").strip()
+        if not norm:
+            plain.append(r)
+            continue
+        if groups and groups[-1][0] == norm:
+            groups[-1][2].append(r)
+        else:
+            groups.append((norm, (r["trigger"] or "").strip(), [r]))
+    if not groups:
+        return ("<aside class='connections connections-out' "
+                "aria-label='Outgoing position connections'>"
+                "<h2>Where you can go</h2><ul>"
+                + edge_list(base, outgoing, "to_node") + "</ul></aside>")
+    parts = ["<aside class='connections connections-out' "
+             "aria-label='Outgoing position connections'>",
+             "<h2>Where you can go</h2>",
+             "<nav class=reaction-nav aria-label='Filter by opponent reaction'>"]
+    for norm, trig, _rows in groups:
+        parts.append(
+            f"<a class=reaction-chip href='#trigger-{html.escape(norm)}'>"
+            f"If they {html.escape(trig)}</a>")
+    parts.append("</nav>")
+    if plain:
+        parts.append("<div class=reaction-always><h3>Always available</h3><ul>"
+                     + edge_list(base, plain, "to_node") + "</ul></div>")
+    for norm, trig, rows in groups:
+        parts.append(
+            f"<section class=reaction-group id='trigger-{html.escape(norm)}'>"
+            f"<h3>If they {html.escape(trig)}…</h3><ul>"
+            + edge_list(base, rows, "to_node") + "</ul></section>")
+    parts.append("</aside>")
+    return "".join(parts)
+
+
+def edge_list(base, rows, col, show_trigger=False):
     if not rows:
         return "<li class='connection-empty muted'>No connections yet.</li>"
-    return "".join(
-        f"<li class=connection-item><a href='{u(base, '/node/')}{r[col]}/'>"
-        f"{html.escape(r['name'])}</a>"
-        f"<span class=connection-label>{html.escape(r['label'])}</span>"
-        f"<p>{html.escape(r['description'] or '')}</p></li>"
-        for r in rows
-    )
+    items = []
+    for r in rows:
+        trig = (r["trigger"] or "").strip()
+        tag = (f"<span class=connection-trigger>if they "
+               f"{html.escape(trig)}</span>"
+               if show_trigger and trig else "")
+        items.append(
+            f"<li class=connection-item><a href='{u(base, '/node/')}{r[col]}/'>"
+            f"{html.escape(r['name'])}</a>"
+            f"<span class=connection-label>{html.escape(r['label'])}</span>"
+            f"{tag}"
+            f"<p>{html.escape(r['description'] or '')}</p></li>")
+    return "".join(items)
 
 
 def index_body(base, phases, by_phase):
@@ -216,15 +299,16 @@ def node_body(base, n, vids, aliases, techs, incoming, outgoing):
     instruction += "".join(video_card(dict(v)) for v in vids) or \
         "<div class=empty-state>No videos yet — curation pending.</div>"
     instruction += "</section>"
-    outgoing_nav = "<aside class='connections connections-out' aria-label='Outgoing position connections'>"
-    outgoing_nav += "<h2>Where you can go</h2><ul>"
-    outgoing_nav += edge_list(base, outgoing, "to_node") + "</ul></aside>"
+    outgoing_nav = outgoing_section(base, outgoing)
+    has_reactions = any((r["trigger_norm"] or "").strip() for r in outgoing)
     incoming_nav = "<aside class='connections connections-in' aria-label='Incoming position connections'>"
     incoming_nav += "<h2>How you got here</h2><ul>"
-    incoming_nav += edge_list(base, incoming, "from_node") + "</ul></aside>"
+    incoming_nav += edge_list(base, dedupe_links(
+        incoming, lambda r: (r["from_node"], r["label"])),
+        "from_node", show_trigger=True) + "</ul></aside>"
     connections = "<div class=connections-column>" + outgoing_nav + incoming_nav + "</div>"
     return ("<div class=node-layout>" + overview + connections + instruction +
-            "</div>" + FACADE_JS)
+            "</div>" + FACADE_JS + (REACTION_JS if has_reactions else ""))
 
 
 def coverage_body(base, rep):
@@ -235,6 +319,7 @@ def coverage_body(base, rep):
             ("no_outgoing", "Nodes with no exits (non-terminal)"),
             ("bare_conditions", "Conditions with no techniques"),
             ("no_videos", "Nodes with no videos (stubs)"),
+            ("subs_without_answers", "Submissions with no follow-ups (no if/then answers)"),
             ("stale_videos", "Videos flagged stale")]:
         items = rep[key]
         body += f"<section class=health-section><h2>{title} " \

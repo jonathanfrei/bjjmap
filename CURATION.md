@@ -49,6 +49,35 @@ chains to · transition to · take back · enter · open to · break with ·
 lands in · recover to · escape via · escape to · counter with · defend with ·
 stabilize to · pull to
 
+## Reaction (if/then) rubric — pilot v1, free text
+
+Some outgoing edges are only available because of what the opponent does.
+Annotate those edges with a `trigger` instead of leaving them in the flat
+"always available" list:
+
+- **Trigger = the other player's observable action**, 3–7 words, lowercase
+  prose in `trigger` (`turns away`), slug in `trigger_norm` (`turns-away`:
+  lowercase alphanumerics + hyphens only).
+- Applies from **both sides**: on attack nodes the trigger is the defender's
+  reaction (`bridges hard`); on bottom/defense nodes it is the attacker's
+  action (`opponent isolates an arm`).
+- **Every triggered edge must explain causality** in `description`: *why*
+  the reaction opens this technique, not just what the technique is.
+  `verify.py` fails triggered edges with empty descriptions.
+- Keep the edge `label` inside the existing controlled vocab (`take back`,
+  `chains to`, `submit with`, `escape to`, …) — reactions qualify edges,
+  they don't invent new labels.
+- Pilot budget: max 2–4 triggers per node, each trigger ≥1 outgoing edge.
+  Edges only — no new nodes in the pilot (new nodes cost ≥3 videos each).
+- Terminal rule: submissions are terminal *only if successful*. A terminal
+  node may have outgoing edges iff **all** of them carry a trigger
+  (failed/defended attempt → next action). Untriggered exits off a
+  terminal node still fail verification.
+
+Starter verbs (seed the future taxonomy; prefer these): turns, bridges,
+posts, frames, grips, hugs, locks, tucks, shrimps, sits up, grapevines,
+isolates, flattens, drives, leans, floats.
+
 ## Packet workflow (per cluster, e.g. half guard)
 
 1. Research 2–4 candidate videos per node; verify IDs via oEmbed.

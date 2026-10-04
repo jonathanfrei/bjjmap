@@ -112,7 +112,9 @@ fetch(BASE + '/api/graph.json').then(function(r){ return r.json(); }).then(funct
     };
   }));
   var edges = new vis.DataSet(fedges.map(function(e, i){
+    var tip = (e.trigger ? 'If they ' + e.trigger + ' → ' : '') + e.label;
     return {id: i, from: e.from_node, to: e.to_node, label: mobile ? '' : e.label, fullLabel: e.label,
+      title: tip,
       arrows: 'to', font: {size: 9, color: css('--muted'), strokeWidth: 3, strokeColor: css('--bg')},
       color: {color: css('--line-strong'), opacity: 0.58}, smooth: {type: 'continuous'}};
   }));
