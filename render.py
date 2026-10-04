@@ -314,6 +314,16 @@ def node_body(base, n, vids, aliases, techs, incoming, outgoing):
 def coverage_body(base, rep):
     body = "<p class='lede muted'>Known gaps in the map — fixed as content grows. " \
         "See the curation rubric in the repo.</p>"
+    st = rep.get("trigger_stats") or {}
+    if st:
+        still_open = len(rep.get("subs_without_answers", []))
+        answered = max(0, st.get("subs_total", 0) - still_open)
+        body += "<section class=health-section><h2>Reaction coverage</h2>" \
+            f"<p>{st.get('triggered_edges', 0)} if/then answers on " \
+            f"{st.get('nodes_with_triggers', 0)} nodes · " \
+            f"{st.get('taxonomy_slugs', 0)} taxonomy slugs · " \
+            f"{answered} submissions answered, {still_open} still open.</p>" \
+            "</section>"
     for key, title in [
             ("no_incoming", "Nodes with no entries"),
             ("no_outgoing", "Nodes with no exits (non-terminal)"),

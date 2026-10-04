@@ -3,6 +3,7 @@
 Stdlib only.
 """
 import os
+import re
 import sqlite3
 import sys
 
@@ -34,7 +35,8 @@ def main():
     c = store.connect()
     tables = {r[0] for r in
               c.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-    for t in ("nodes", "videos", "edges", "node_aliases", "phases"):
+    for t in ("nodes", "videos", "edges", "node_aliases", "phases",
+              "trigger_taxonomy"):
         check(t in tables, f"missing table: {t}")
 
     cols = lambda t: [r[1] for r in c.execute(f"PRAGMA table_info({t})")]
@@ -87,14 +89,25 @@ def main():
             check(has_t == has_n,
                   f"edge {e['id']}: trigger/trigger_norm must be set together")
             if has_n:
-                import re as _re
-                check(bool(_re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*",
-                                         e["trigger_norm"] or "")),
+                check(bool(re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*",
+                                        e["trigger_norm"] or "")),
                       f"edge {e['id']}: bad trigger_norm "
                       f"{e['trigger_norm']!r} (lowercase slug, hyphens)")
                 check((e["description"] or "").strip(),
                       f"edge {e['id']}: triggered edge needs a description "
                       f"(why the reaction opens it)")
+                check(c.execute("SELECT 1 FROM trigger_taxonomy WHERE slug=?",
+                               (e["trigger_norm"],)).fetchone(),
+                      f"edge {e['id']}: trigger_norm "
+                      f"{e['trigger_norm']!r} not in trigger_taxonomy")
+        for t in c.execute("SELECT * FROM trigger_taxonomy"):
+            check(bool(re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*",
+                                    t["slug"] or "")),
+                  f"taxonomy {t['slug']!r}: bad slug")
+            check((t["family"] or "").strip(),
+                  f"taxonomy {t['slug']!r}: empty family")
+            check((t["display"] or "").strip(),
+                  f"taxonomy {t['slug']!r}: empty display")
         for v in c.execute("SELECT * FROM videos WHERE rejected=0"):
             check(len(v["youtube_id"]) == 11,
                   f"video {v['id']}: bad youtube_id {v['youtube_id']!r}")

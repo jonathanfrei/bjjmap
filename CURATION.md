@@ -49,11 +49,12 @@ chains to · transition to · take back · enter · open to · break with ·
 lands in · recover to · escape via · escape to · counter with · defend with ·
 stabilize to · pull to
 
-## Reaction (if/then) rubric — pilot v1, free text
+## Reaction (if/then) rubric — controlled vocabulary
 
 Some outgoing edges are only available because of what the opponent does.
 Annotate those edges with a `trigger` instead of leaving them in the flat
-"always available" list:
+"always available" list. A link present in both forms renders only in its
+If-section — so prefer triggered over unconditional duplicates.
 
 - **Trigger = the other player's observable action**, 3–7 words, lowercase
   prose in `trigger` (`turns away`), slug in `trigger_norm` (`turns-away`:
@@ -67,21 +68,49 @@ Annotate those edges with a `trigger` instead of leaving them in the flat
 - Keep the edge `label` inside the existing controlled vocab (`take back`,
   `chains to`, `submit with`, `escape to`, …) — reactions qualify edges,
   they don't invent new labels.
-- Pilot budget: max 2–4 triggers per node, each trigger ≥1 outgoing edge.
-  Edges only — no new nodes in the pilot (new nodes cost ≥3 videos each).
+- Budget: max 2–4 triggers per node, each trigger ≥1 outgoing edge.
 - Terminal rule: submissions are terminal *only if successful*. A terminal
   node may have outgoing edges iff **all** of them carry a trigger
   (failed/defended attempt → next action). Untriggered exits off a
   terminal node still fail verification.
 
-Starter verbs (seed the future taxonomy; prefer these): turns, bridges,
-posts, frames, grips, hugs, locks, tucks, shrimps, sits up, grapevines,
-isolates, flattens, drives, leans, floats.
+### Trigger taxonomy (frozen — extend, don't fork)
+
+Every `trigger_norm` must exist in the `trigger_taxonomy` table
+(`verify.py` enforces this; `normalize_triggers.py` audits drift).
+Reuse an existing slug when it fits. A genuinely new reaction ships with
+an `INSERT OR IGNORE INTO trigger_taxonomy` row (slug, family, display)
+in the same packet. Families: `posture-movement` (turns, bridges, base
+changes), `frames-grips` (arm/hand/grip fighting), `defense-commit`
+(chin tucks, stalls), `weight-pressure` (rides, grapevines),
+`limb-exposure` (isolated limbs, open necks).
 
 ## Packet workflow (per cluster, e.g. half guard)
 
 1. Research 2–4 candidate videos per node; verify IDs via oEmbed.
-2. Insert directly (no approval gate) with `why_this_one` + `role`.
-3. Audit edges both directions: every technique gets a `scores as` edge to
+2. Stage first: `./stage_packet.sh out_NN.sql` must pass `verify.py
+   --strict` plus the export-diff review before touching the live DB.
+   Apply with `sqlite3 bjj.db < out_NN.sql` only after the changed-page
+   list matches expectations.
+3. Insert directly (no approval gate) with `why_this_one` + `role`.
+4. Audit edges both directions: every technique gets a `scores as` edge to
    its condition; every position gets at least one entry and one exit path.
-4. Owner vetoes via `rejected=1` — never delete, so vetoes stay visible.
+5. Owner vetoes via `rejected=1` — never delete, so vetoes stay visible.
+
+## Multi-agent packet protocol (parallel research agents)
+
+When attack/defense (or per-cluster) packets are researched in parallel:
+
+1. **Non-overlapping ownership.** Assign each agent disjoint node IDs and
+   edge directions (e.g. attack owns `*_top` + finishes, defense owns
+   `*_bottom` + escapes). Shared needs get one owner, flagged to the other.
+2. **Video pools.** Agents must check candidate `youtube_id`s against the
+   live `videos` table AND reserve distinct picks — the same ID on two
+   nodes fails `--strict` (cross-node reuse). State picks explicitly so
+   the merger can spot collisions.
+3. **Packets only, never the DB.** Agents return `out_NN.sql` text
+   (`INSERT OR IGNORE`, `source='agent:<packet>'`); the human stages,
+   reviews, and applies.
+4. **Human merges.** The merger resolves collisions, trims interpretive
+   chains, and confirms bottom-side trigger wording reads naturally
+   before apply.

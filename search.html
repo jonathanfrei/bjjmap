@@ -42,29 +42,32 @@ var items = [];
 function esc(s){ var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
 function rank(it, q){
   var name = it.name.toLowerCase();
-  if (name.indexOf(q) === 0) return 0;
-  if (name.split(/[\s\-\(\)]+/).some(function(w){ return w.indexOf(q) === 0; })) return 1;
-  if (name.indexOf(q) > -1) return 2;
-  if ((it.aliases || []).join(' ').toLowerCase().indexOf(q) > -1) return 3;
-  if ((it.description || '').toLowerCase().indexOf(q) > -1) return 4;
-  return 5;
+  if (name.indexOf(q) === 0) return [0, ''];
+  if (name.split(/[\s\-\(\)]+/).some(function(w){ return w.indexOf(q) === 0; })) return [1, ''];
+  if (name.indexOf(q) > -1) return [2, ''];
+  if ((it.aliases || []).join(' ').toLowerCase().indexOf(q) > -1) return [3, ''];
+  var hit = (it.triggers || []).filter(function(t){ return t.toLowerCase().indexOf(q) > -1; })[0] || '';
+  if (hit) return [4, hit];
+  if ((it.description || '').toLowerCase().indexOf(q) > -1) return [5, ''];
+  return [6, ''];
 }
-function card(it){
+function card(it, via){
   var meta = it.side && it.side !== 'na' ? '<span>' + esc(it.side) + '</span>' : '';
+  var why = via ? '<p class="muted">If they ' + esc(via) + '…</p>' : '';
   return '<article class="node-card kind-' + esc(it.kind) + '">' +
     '<span class="badge badge-' + esc(it.kind) + '">' + esc(it.kind) + '</span>' +
     '<h3><a class="card-link" href="' + BASE + '/node/' + encodeURIComponent(it.id) + '/">' + esc(it.name) + '</a></h3>' +
-    '<div class="node-meta">' + meta + '</div><p>' + esc(it.description || '') + '</p></article>';
+    '<div class="node-meta">' + meta + '</div><p>' + esc(it.description || '') + '</p>' + why + '</article>';
 }
 function render(){
   var raw = input.value.trim().slice(0, 120);
   var q = raw.toLowerCase();
   if (!q) { hits.innerHTML = ''; count.textContent = 'Start typing to find a position or technique.'; return; }
   var scored = [];
-  items.forEach(function(it){ var r = rank(it, q); if (r < 5) scored.push([r, it]); });
-  scored.sort(function(a, b){ return a[0] - b[0] || (a[1].name < b[1].name ? -1 : 1); });
+  items.forEach(function(it){ var r = rank(it, q); if (r[0] < 6) scored.push([r[0], r[1], it]); });
+  scored.sort(function(a, b){ return a[0] - b[0] || (a[2].name < b[2].name ? -1 : 1); });
   count.textContent = scored.length ? scored.length + ' result' + (scored.length === 1 ? '' : 's') + ' for “' + raw + '”' : 'No results for “' + raw + '”';
-  hits.innerHTML = scored.map(function(pair){ return card(pair[1]); }).join('');
+  hits.innerHTML = scored.map(function(triple){ return card(triple[2], triple[1]); }).join('');
 }
 document.getElementById('search-form').addEventListener('submit', function(event){
   event.preventDefault();

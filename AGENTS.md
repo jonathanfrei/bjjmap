@@ -61,6 +61,10 @@
   (`INSERT OR IGNORE INTO videos ...`, `source='agent:videos-3plus'`) which are
   applied together in one transaction — never let agents write the DB directly.
   Verify IDs with the oEmbed helper before inserting.
+  Stage each packet first: `./stage_packet.sh out_NN.sql` (verify +
+  normalize + export-diff on a DB copy, live DB untouched). New trigger
+  slugs need `trigger_taxonomy` rows or `verify.py --strict` fails.
+  Multi-agent rules live in CURATION.md (disjoint ownership, video pools).
 - Keep styling minimal — design system comes later.
 - `seed.py` is the POC seed; later seeds used inline `sqlite3` heredocs.
   Prefer idempotent SQL (`INSERT OR IGNORE`) so re-runs are safe.
