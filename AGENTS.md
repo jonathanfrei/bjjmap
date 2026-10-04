@@ -77,9 +77,9 @@
   `armbar_guard`, `armbar_side`, `armbar_back`) — distinct setups are
   distinct nodes per CURATION.md; don't collapse them later.
 - Packet/migration bookkeeping: content packets are `out_NN_*.sql`
-  (numbered; last used `11`), schema/vocabulary history is
-  `migrations/` (last used `009`). `stage_packet.sh` takes any path, so
-  a migration + packet can be staged as one concatenated batch.
+  (numbered — `ls out_*.sql` to find the next number), schema/vocabulary
+  history is `migrations/`. `stage_packet.sh` takes any path, so a
+  migration + packet can be staged as one concatenated batch.
 - `seed.py` is the POC seed; later seeds used inline `sqlite3` heredocs.
   Prefer idempotent SQL (`INSERT OR IGNORE`) so re-runs are safe.
 - Run `./backup.sh` before any curation batch. `backups/` holds .db + .sql.
