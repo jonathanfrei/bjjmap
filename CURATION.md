@@ -57,11 +57,13 @@ Annotate those edges with a `trigger` instead of leaving them in the flat
 If-section — so prefer triggered over unconditional duplicates.
 
 - **Trigger = the other player's observable action**, 3–7 words, lowercase
-  prose in `trigger` (`turns away`), slug in `trigger_norm` (`turns-away`:
-  lowercase alphanumerics + hyphens only).
+  base-verb prose in `trigger` (`turn away`) so it reads inside the rendered
+  heading "If they …", slug in `trigger_norm` (`turn-away`:
+  lowercase alphanumerics + hyphens only). Migration 009 renamed the v1
+  3rd-person vocabulary (`turns away` / `turns-away`).
 - Applies from **both sides**: on attack nodes the trigger is the defender's
-  reaction (`bridges hard`); on bottom/defense nodes it is the attacker's
-  action (`opponent isolates an arm`).
+  reaction (`bridge hard`); on bottom/defense nodes it is the attacker's
+  action (`isolate an arm`) — same base-verb form, no `opponent ` prefix.
 - **Every triggered edge must explain causality** in `description`: *why*
   the reaction opens this technique, not just what the technique is.
   `verify.py` fails triggered edges with empty descriptions.

@@ -66,16 +66,16 @@ INSERT OR IGNORE INTO edges
 VALUES
   ('crucifix_top', 'rnc', 'submit with',
    'When they lift the chin to breathe, the neck opens under the choking arm — slide the one-arm strangle home while the leg clamp keeps both arms out of the defense.',
-   'agent:crucifix-attack', 'lifts chin to breathe', 'lifts-chin-to-breathe'),
+   'agent:crucifix-attack', 'lift chin to breathe', 'lift-chin-to-breathe'),
   ('crucifix_top', 'kimura', 'submit with',
    'A tucked chin seals the neck but glues the trapped arm in place — lock the figure-four on that isolated arm instead of fighting the chin.',
-   'agent:crucifix-attack', 'tucks chin to defend', 'tucks-chin-to-defend'),
+   'agent:crucifix-attack', 'tuck chin to defend', 'tuck-chin-to-defend'),
   ('crucifix_top', 'americana', 'submit with',
    'When they clasp their hands to stop the choke, the joined arms fix the elbow in place — paintbrush the leg-trapped arm into the americana without opening the clamp.',
-   'agent:crucifix-attack', 'clasps hands to stall', 'clasps-hands-to-stall'),
+   'agent:crucifix-attack', 'clasp hands to stall', 'clasp-hands-to-stall'),
   ('crucifix_top', 'back_control_top', 'take back',
    'When they rip the arm out of the leg clamp, the rotation turns the back toward you — keep chest contact and lock the seatbelt instead of chasing the lost trap.',
-   'agent:crucifix-attack', 'yanks arm from leg trap', 'yanks-arm-from-leg-trap');
+   'agent:crucifix-attack', 'yank arm from leg trap', 'yank-arm-from-leg-trap');
 
 -- 3e. Escapes out of crucifix_bottom (all triggered: attacker's actions).
 INSERT OR IGNORE INTO edges
@@ -83,13 +83,13 @@ INSERT OR IGNORE INTO edges
 VALUES
   ('crucifix_bottom', 'turtle_bottom', 'escape to',
    'Once a leg unlocks to chase the finish the trapped-side hip is free -- turn in toward the loose leg and rebuild turtle before the arm-trap resets.',
-   'agent:crucifix-defense', 'opponent releases a hook',
-   'opponent-releases-a-hook'),
+   'agent:crucifix-defense', 'release a hook',
+   'release-a-hook'),
   ('crucifix_bottom', 'escape_bridge', 'escape via',
    'Both of the attacker''s hands committing to the armlock loads their weight onto your chest -- bridge explosively into them to topple the control before the elbow straightens.',
-   'agent:crucifix-defense', 'opponent attacks the near arm',
-   'opponent-attacks-the-near-arm'),
+   'agent:crucifix-defense', 'attack the near arm',
+   'attack-the-near-arm'),
   ('crucifix_bottom', 'elbow_escape', 'escape via',
    'Leaning back to extend the arm or find the choke lifts pressure off your hips -- shrimp the legs clear in that space and scoot out the back door.',
-   'agent:crucifix-defense', 'opponent leans back to finish',
-   'opponent-leans-back-to-finish');
+   'agent:crucifix-defense', 'lean back to finish',
+   'lean-back-to-finish');
