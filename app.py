@@ -41,13 +41,15 @@ class H(BaseHTTPRequestHandler):
                     by_phase.setdefault(r["phase"], []).append(r)
                 self.send(200, render.page(
                     BASE_PATH, "BJJ Map — No-Gi",
-                    render.index_body(BASE_PATH, phases, by_phase)))
+                    render.index_body(BASE_PATH, phases, by_phase),
+                    search=False))
             elif path == "/search" or path == "/search/":
                 q = parse_qs(u.query).get("q", [""])[0].strip()[:120]
                 hits = store.search(c, q) if q else []
                 self.send(200, render.page(
                     BASE_PATH, f"Search: {q}",
-                    render.search_body(BASE_PATH, q, hits)))
+                    render.search_body(BASE_PATH, q, hits),
+                    search=False))
             elif path.startswith("/node/"):
                 nid = unquote(path[len("/node/"):]).strip("/")
                 self.node_page(c, nid)
@@ -90,7 +92,8 @@ class H(BaseHTTPRequestHandler):
         body = render.node_body(
             BASE_PATH, n, vids, store.aliases_for(c, nid),
             store.techniques_for(c, nid) if n["kind"] == "condition" else [],
-            store.edges_in(c, nid), store.edges_out(c, nid))
+            store.edges_in(c, nid), store.edges_out(c, nid),
+            store.phase_title(c, n["phase"]))
         self.send(200, render.page(BASE_PATH, n["name"], body))
 
     def serve_static(self, path):

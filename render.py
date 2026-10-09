@@ -107,7 +107,7 @@ def footer(base):
     )
 
 
-def page(base, title, body, extra_head="", active="map"):
+def page(base, title, body, extra_head="", active="map", search=True):
     return (
         "<!doctype html><html lang=en><head><meta charset=utf-8>"
         "<meta name=viewport content='width=device-width,initial-scale=1'>"
@@ -121,7 +121,10 @@ def page(base, title, body, extra_head="", active="map"):
         f"<link rel=icon href='{base}/static/favicon.svg' type='image/svg+xml'>"
         f"<title>{html.escape(title)}</title>{extra_head}</head><body>"
         f"{nav(base, active)}<main class='wrap page-main'>"
-        f"<h1>{html.escape(title)}</h1>{body}</main>"
+        # Node / health / 404 pages get the search box above the h1; the
+        # index and search pages already render one inside their body.
+        + (search_box(base) if search else "")
+        + f"<h1>{html.escape(title)}</h1>{body}</main>"
         f"{footer(base)}"
         f"<script src='{base}/static/theme.js' defer></script></body></html>"
     )
@@ -293,7 +296,8 @@ def index_body(base, phases, by_phase):
     return "".join(parts)
 
 
-def node_body(base, n, vids, aliases, techs, incoming, outgoing):
+def node_body(base, n, vids, aliases, techs, incoming, outgoing,
+              phase_title=None):
     bits = [n["kind"], n["side"]]
     if n["points"]:
         bits.append(f"{n['points']} pts")
@@ -316,6 +320,14 @@ def node_body(base, n, vids, aliases, techs, incoming, outgoing):
             f"{html.escape(t['name'])}</a> "
             f"<span class=muted>— {html.escape(t['description'] or '')}"
             f"</span></li>" for t in techs) + "</ul></section>"
+    if phase_title:
+        # Homepage groups are anchored (#phase-<key>); the breadcrumb links back.
+        body = (f"<nav class=breadcrumb aria-label='Breadcrumb'>"
+                f"<a href='{u(base, '/')}#phase-{html.escape(n['phase'])}'>"
+                f"{html.escape(phase_title)}</a>"
+                "<span class=breadcrumb-sep aria-hidden=true>/</span>"
+                f"<span class=breadcrumb-current>{html.escape(n['name'])}"
+                "</span></nav>") + body
     overview = "<section class=node-overview>" + body + "</section>"
     instruction = "<section class=node-instruction><h2>Instruction</h2>"
     instruction += "".join(video_card(dict(v)) for v in vids) or \

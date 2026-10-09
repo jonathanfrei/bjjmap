@@ -20,6 +20,12 @@ def phases(c):
     return c.execute("SELECT * FROM phases ORDER BY pos").fetchall()
 
 
+def phase_title(c, key):
+    """Display title for a phase key — used for node-page breadcrumbs."""
+    r = c.execute("SELECT title FROM phases WHERE key=?", (key,)).fetchone()
+    return r["title"] if r else None
+
+
 def all_nodes(c):
     return c.execute("SELECT * FROM nodes").fetchall()
 
