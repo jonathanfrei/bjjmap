@@ -39,20 +39,66 @@ var hits = document.getElementById('hits');
 var count = document.getElementById('count');
 var items = [];
 function esc(s){ var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+function lev(a, b, cap){
+  // Optimal string alignment distance (Levenshtein + adjacent
+  // transposition, so "gurad"~"guard") with early exit above cap.
+  if (a === b) return 0;
+  if (Math.abs(a.length - b.length) > cap) return cap + 1;
+  var prev2 = null, prev = [], i, j;
+  for (j = 0; j <= b.length; j++) prev[j] = j;
+  for (i = 1; i <= a.length; i++) {
+    var cur = [i], best = i;
+    for (j = 1; j <= b.length; j++) {
+      var cost = a.charCodeAt(i-1) === b.charCodeAt(j-1) ? 0 : 1;
+      cur[j] = Math.min(prev[j] + 1, cur[j-1] + 1, prev[j-1] + cost);
+      if (i > 1 && j > 1 &&
+          a.charCodeAt(i-1) === b.charCodeAt(j-2) &&
+          a.charCodeAt(i-2) === b.charCodeAt(j-1) &&
+          prev2[j-2] + 1 < cur[j]) {
+        cur[j] = prev2[j-2] + 1;
+      }
+      if (cur[j] < best) best = cur[j];
+    }
+    if (best > cap) return cap + 1;
+    prev2 = prev; prev = cur;
+  }
+  return prev[b.length];
+}
+function closeMatch(it, q){
+  // Closest word/alias within a small edit budget — powers typo tolerance.
+  var cap = q.length >= 6 ? 2 : (q.length >= 4 ? 1 : 0);
+  if (!cap) return null;
+  var best = cap + 1, what = '';
+  function check(s){
+    var d = lev(q, s, cap);
+    if (d < best) { best = d; what = s; }
+  }
+  var name = it.name.toLowerCase();
+  name.split(/[\s\-\(\)]+/).forEach(function(w){ if (w) check(w); });
+  (it.aliases || []).forEach(function(a){ check(a.toLowerCase()); });
+  return best <= cap ? what : null;
+}
 function rank(it, q){
   var name = it.name.toLowerCase();
-  if (name.indexOf(q) === 0) return [0, ''];
-  if (name.split(/[\s\-\(\)]+/).some(function(w){ return w.indexOf(q) === 0; })) return [1, ''];
-  if (name.indexOf(q) > -1) return [2, ''];
-  if ((it.aliases || []).join(' ').toLowerCase().indexOf(q) > -1) return [3, ''];
+  if (name.indexOf(q) === 0) return { tier: 0, note: '' };
+  if (name.split(/[\s\-\(\)]+/).some(function(w){ return w.indexOf(q) === 0; })) return { tier: 1, note: '' };
+  if ((it.id || '').toLowerCase().indexOf(q) === 0) return { tier: 2, note: '' };
+  if (name.indexOf(q) > -1) return { tier: 3, note: '' };
+  var aliases = it.aliases || [];
+  var ap = aliases.filter(function(a){ return a.toLowerCase().indexOf(q) === 0; })[0];
+  if (ap) return { tier: 4, note: 'Matched alias “' + esc(ap) + '”' };
+  var ac = aliases.filter(function(a){ return a.toLowerCase().indexOf(q) > -1; })[0];
+  if (ac) return { tier: 5, note: 'Matched alias “' + esc(ac) + '”' };
+  var close = closeMatch(it, q);
+  if (close) return { tier: 6, note: 'Close match to “' + esc(close) + '”' };
   var hit = (it.triggers || []).filter(function(t){ return t.toLowerCase().indexOf(q) > -1; })[0] || '';
-  if (hit) return [4, hit];
-  if ((it.description || '').toLowerCase().indexOf(q) > -1) return [5, ''];
-  return [6, ''];
+  if (hit) return { tier: 7, note: 'If they “' + esc(hit) + '”…' };
+  if ((it.description || '').toLowerCase().indexOf(q) > -1) return { tier: 8, note: '' };
+  return { tier: 9, note: '' };
 }
-function card(it, via){
+function card(it, note){
   var meta = it.side && it.side !== 'na' ? '<span>' + esc(it.side) + '</span>' : '';
-  var why = via ? '<p class="muted">If they ' + esc(via) + '…</p>' : '';
+  var why = note ? '<p class="muted">' + note + '</p>' : '';
   return '<article class="node-card kind-' + esc(it.kind) + '">' +
     '<span class="badge badge-' + esc(it.kind) + '">' + esc(it.kind) + '</span>' +
     '<h3><a class="card-link" href="' + BASE + '/node/' + encodeURIComponent(it.id) + '/">' + esc(it.name) + '</a></h3>' +
@@ -63,10 +109,10 @@ function render(){
   var q = raw.toLowerCase();
   if (!q) { hits.innerHTML = ''; count.textContent = 'Start typing to find a position or technique.'; return; }
   var scored = [];
-  items.forEach(function(it){ var r = rank(it, q); if (r[0] < 6) scored.push([r[0], r[1], it]); });
+  items.forEach(function(it){ var r = rank(it, q); if (r.tier < 9) scored.push([r.tier, r.note, it]); });
   scored.sort(function(a, b){ return a[0] - b[0] || (a[2].name < b[2].name ? -1 : 1); });
   count.textContent = scored.length ? scored.length + ' result' + (scored.length === 1 ? '' : 's') + ' for “' + raw + '”' : 'No results for “' + raw + '”';
-  hits.innerHTML = scored.map(function(triple){ return card(triple[2], triple[1]); }).join('');
+  hits.innerHTML = scored.map(function(t){ return card(t[2], t[1]); }).join('');
 }
 document.getElementById('search-form').addEventListener('submit', function(event){
   event.preventDefault();
