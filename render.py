@@ -167,10 +167,22 @@ def node_summary(base, r):
 def video_card(v):
     stale = " <b>[stale link?]</b>" if v["stale"] else ""
     yid = v["youtube_id"]
+    meta = []
+    if v.get("channel"):
+        meta.append(html.escape(v["channel"]))
+    dur = v.get("duration_s") or 0
+    if dur:
+        meta.append(f"{dur // 60}:{dur % 60:02d}")
+    pub = (v.get("published_at") or "")[:7]
+    if pub:
+        meta.append(html.escape(pub))
+    meta_line = (f"<p class=video-meta>{' · '.join(meta)}</p>"
+                 if meta else "")
     return (
         "<article class=video-card><div class=video-heading>"
         f"<h3>{html.escape(v['title'])}</h3>"
         f"<span class=role-chip>{html.escape(v['role'])}</span>{stale}</div>"
+        + meta_line +
         f"<div class=facade data-yid='{yid}'>"
         f"<img loading=lazy src='https://i.ytimg.com/vi/{yid}/maxresdefault.jpg' "
         f"onerror=\"this.onerror=null;this.src="

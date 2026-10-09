@@ -28,6 +28,9 @@ CREATE TABLE videos (
   rejected INTEGER NOT NULL DEFAULT 0,
   stale INTEGER NOT NULL DEFAULT 0,
   source TEXT NOT NULL DEFAULT '',
+  channel TEXT NOT NULL DEFAULT '',
+  duration_s INTEGER NOT NULL DEFAULT 0,
+  published_at TEXT NOT NULL DEFAULT '',
   created_at TEXT DEFAULT (datetime('now')),
   UNIQUE(node_id, youtube_id)
 );
