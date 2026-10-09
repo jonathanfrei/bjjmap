@@ -78,15 +78,24 @@ def techniques_for(c, nid):
 
 
 def search(c, term):
+    """Ranked fallback for the no-JS /search route on the live server.
+
+    Tiers mirror the static client search in search.html (name prefix,
+    then alias prefix, then id prefix, then alphabetical). Keep the two in
+    sync; the static page additionally does typo-tolerant matching.
+    """
     like = f"%{term}%"
+    prefix = f"{term}%"
     return c.execute(
         "SELECT DISTINCT n.* FROM nodes n "
         "LEFT JOIN node_aliases a ON a.node_id=n.id "
         "WHERE n.name LIKE ? OR n.id LIKE ? OR n.description LIKE ? "
         "OR a.alias LIKE ? OR EXISTS (SELECT 1 FROM edges e "
         "WHERE e.from_node=n.id AND (e.trigger LIKE ? "
-        "OR e.trigger_norm LIKE ?)) ORDER BY n.name",
-        (like, like, like, like, like, like),
+        "OR e.trigger_norm LIKE ?)) "
+        "ORDER BY (n.name LIKE ?) DESC, (a.alias LIKE ?) DESC, "
+        "(n.id LIKE ?) DESC, n.name",
+        (like, like, like, like, like, like, prefix, prefix, prefix),
     ).fetchall()
 
 
