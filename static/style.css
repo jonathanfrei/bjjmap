@@ -216,7 +216,16 @@ button:active, .button:active { transform: translateY(1px); }
 .node-meta .meta-link { position: relative; z-index: 1; gap: var(--space-1); font-weight: 750; text-decoration: none; }
 
 /* Node detail */
-.node-layout { display: grid; grid-template-areas: "overview" "connections-out" "instruction" "connections-in"; gap: var(--space-8); }
+.breadcrumb {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2);
+  margin-bottom: var(--space-3); color: var(--muted);
+  font-size: 0.82rem; font-weight: 650;
+}
+.breadcrumb a { color: var(--muted); text-decoration: none; }
+.breadcrumb a:hover { color: var(--accent); text-decoration: underline; }
+.breadcrumb-sep { color: var(--line-strong); }
+.breadcrumb-current { color: var(--ink); }
+.node-layout { display: grid; grid-template-areas: "overview" "connections-out" "connections-in" "instruction"; gap: var(--space-8); }
 .node-overview { grid-area: overview; } .node-instruction { grid-area: instruction; min-width: 0; }
 .connections-column { display: contents; }
 .connections { min-width: 0; }

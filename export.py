@@ -41,7 +41,8 @@ def main():
 
     write(out, "index.html", render.page(
         base, "BJJ Map — No-Gi",
-        render.index_body(base, phases, by_phase)))
+        render.index_body(base, phases, by_phase),
+        search=False))
 
     for n in nodes:
         nid = n["id"]
@@ -49,14 +50,15 @@ def main():
         body = render.node_body(
             base, n, vids, store.aliases_for(c, nid),
             store.techniques_for(c, nid) if n["kind"] == "condition" else [],
-            store.edges_in(c, nid), store.edges_out(c, nid))
+            store.edges_in(c, nid), store.edges_out(c, nid),
+            store.phase_title(c, n["phase"]))
         write(out, f"node/{nid}/index.html",
               render.page(base, n["name"], body))
 
-    with open(os.path.join(BASE_DIR, "graph.html")) as f:
+    with open(os.path.join(BASE_DIR, "graph.html"), encoding="utf-8") as f:
         write(out, "graph/index.html",
               f.read().replace("__BASE__", base))
-    with open(os.path.join(BASE_DIR, "search.html")) as f:
+    with open(os.path.join(BASE_DIR, "search.html"), encoding="utf-8") as f:
         write(out, "search/index.html",
               f.read().replace("__BASE__", base))
     write(out, "health/index.html", render.page(
