@@ -65,6 +65,9 @@ def u(base, path):
     return base.rstrip("/") + path
 
 
+REPO_URL = "https://github.com/jonathanfrei/bjjmap"
+
+
 def nav(base, active=""):
     def link(path, label, key):
         current = " aria-current=page" if active == key else ""
@@ -77,12 +80,30 @@ def nav(base, active=""):
         "<span class=brand-mark aria-hidden=true><span></span></span>"
         "<span class=brand-name>BJJ Map</span><span class=brand-tag>No-Gi</span>"
         "</a><nav class=primary-nav aria-label=Primary>"
-        f"{link('/', 'Map', 'map')}{link('/graph/', 'Graph', 'graph')}"
-        f"{link('/health/', 'Health', 'health')}</nav>"
+        f"{link('/', 'Map', 'map')}{link('/graph/', 'Graph', 'graph')}</nav>"
         "<button class=theme-toggle type=button aria-label='Change color theme' "
         "title='Change color theme'><span aria-hidden=true></span>"
         "<span class=theme-label>Theme</span></button>"
         "</div></header>"
+    )
+
+
+def footer(base):
+    """Site-wide footer: attribution, maintenance links. Health/curation
+    pages live here rather than in the primary nav — athletes want the map
+    and the graph; maintainers can find the rest."""
+    return (
+        "<footer class=site-footer><div class='wrap footer-shell'>"
+        "<p class=footer-note>Node descriptions are original text licensed "
+        "<a href='https://creativecommons.org/licenses/by-sa/4.0/' "
+        "rel=license>CC BY-SA 4.0</a>. Scoring anchors follow the IBJJF "
+        "rulebook. Videos are third-party YouTube links, embedded only when "
+        "you press play.</p>"
+        "<nav class=footer-nav aria-label='Footer'>"
+        f"<a href='{u(base, '/health/')}'>Content status</a>"
+        f"<a href='{REPO_URL}/issues/new/choose'>Suggest an edit</a>"
+        f"<a href='{REPO_URL}'>Source</a>"
+        "</nav></div></footer>"
     )
 
 
@@ -101,6 +122,7 @@ def page(base, title, body, extra_head="", active="map"):
         f"<title>{html.escape(title)}</title>{extra_head}</head><body>"
         f"{nav(base, active)}<main class='wrap page-main'>"
         f"<h1>{html.escape(title)}</h1>{body}</main>"
+        f"{footer(base)}"
         f"<script src='{base}/static/theme.js' defer></script></body></html>"
     )
 
