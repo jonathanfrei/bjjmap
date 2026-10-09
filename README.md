@@ -87,7 +87,10 @@ stale embeds).
 
 ## Roadmap
 
-- Graph filters when nodes cross ~60 (by phase/subtree, via `/api/graph`)
-- Search ranking (currently unordered LIKE matches)
-- Phase 3: video research for stub nodes, user suggestions,
+- Homepage side/kind filters — shipped (progressive enhancement; inert
+  without JS)
+- Search ranking: the static `/search/` page ranks matches (name → word
+  prefix → alias → trigger → description); the server-side `/search` route
+  is still an unordered LIKE — align the two
+- Phase 3: video research, user suggestions,
   gi expansion (edge-level gi-only flags if needed)
