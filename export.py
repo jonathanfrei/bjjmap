@@ -40,7 +40,7 @@ def main():
         by_phase.setdefault(r["phase"], []).append(r)
 
     write(out, "index.html", render.page(
-        base, "BJJ Map (No-Gi POC)",
+        base, "BJJ Map — No-Gi",
         render.index_body(base, phases, by_phase)))
 
     for n in nodes:

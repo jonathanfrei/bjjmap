@@ -18,7 +18,6 @@
   <nav class="primary-nav" aria-label="Primary">
     <a class="nav-link" href="__BASE__/">Map</a>
     <a class="nav-link" href="__BASE__/graph/" aria-current="page">Graph</a>
-    <a class="nav-link" href="__BASE__/health/">Health</a>
   </nav>
   <button class="theme-toggle" type="button" aria-label="Change color theme" title="Change color theme"><span aria-hidden="true"></span><span class="theme-label">Theme</span></button>
 </div></header>
@@ -170,5 +169,13 @@ fetch(BASE + '/api/graph.json').then(function(r){ return r.json(); }).then(funct
 });
 })();
 </script>
+<footer class="site-footer"><div class="wrap footer-shell">
+  <p class="footer-note">Node descriptions are original text licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="license">CC BY-SA 4.0</a>. Scoring anchors follow the IBJJF rulebook. Videos are third-party YouTube links, embedded only when you press play.</p>
+  <nav class="footer-nav" aria-label="Footer">
+    <a href="__BASE__/health/">Content status</a>
+    <a href="https://github.com/jonathanfrei/bjjmap/issues/new/choose">Suggest an edit</a>
+    <a href="https://github.com/jonathanfrei/bjjmap">Source</a>
+  </nav>
+</div></footer>
 <script src="__BASE__/static/theme.js"></script>
 </body></html>

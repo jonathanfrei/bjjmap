@@ -40,7 +40,7 @@ class H(BaseHTTPRequestHandler):
                 for r in nodes:
                     by_phase.setdefault(r["phase"], []).append(r)
                 self.send(200, render.page(
-                    BASE_PATH, "BJJ Map (No-Gi POC)",
+                    BASE_PATH, "BJJ Map — No-Gi",
                     render.index_body(BASE_PATH, phases, by_phase)))
             elif path == "/search" or path == "/search/":
                 q = parse_qs(u.query).get("q", [""])[0].strip()[:120]
