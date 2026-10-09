@@ -152,7 +152,10 @@ def node_summary(base, r):
         bits.append("terminal")
     meta = "".join(f"<span>{html.escape(str(bit))}</span>" for bit in bits)
     return (
-        f"<article class='node-card kind-{r['kind']}'>"
+        f"<article class='node-card kind-{r['kind']}'"
+        f" data-kind='{html.escape(r['kind'] or '')}'"
+        f" data-side='{html.escape(str(r['side'] or ''))}'"
+        f" data-phase='{html.escape(r['phase'] or '')}'>"
         f"<span class='badge badge-{r['kind']}'>{r['kind']}</span>"
         f"<h3><a class=card-link href='{u(base, '/node/')}{r['id']}/'>"
         f"{html.escape(r['name'])}</a></h3>"
@@ -258,11 +261,73 @@ def edge_list(base, rows, col, show_trigger=False):
     return "".join(items)
 
 
+FILTER_SIDES = [("all", "All"), ("top", "Top"), ("bottom", "Bottom"),
+                ("neutral", "Neutral")]
+FILTER_KINDS = [("all", "All"), ("position", "Positions"),
+                ("technique", "Techniques"), ("submission", "Submissions"),
+                ("condition", "Scoring conditions")]
+
+# Homepage filters: progressive enhancement. Without JS every card stays
+# visible and the buttons are inert; with JS cards carry data-side /
+# data-kind attributes and the bar filters + hides emptied phase sections.
+FILTER_JS = (
+    "<script>"
+    "(function(){"
+    "var bar=document.querySelector('.filters');if(!bar)return;"
+    "var phaseNav=document.querySelector('.phase-nav');"
+    "var count=document.getElementById('filter-count');"
+    "var total=document.querySelectorAll('.node-card[data-kind]').length;"
+    "function state(group){"
+    "var b=bar.querySelector('[data-filter='+group+'][aria-pressed=true]');"
+    "return b?b.getAttribute('data-value'):'all';}"
+    "function apply(){"
+    "var side=state('side'),kind=state('kind'),shown=0;"
+    "document.querySelectorAll('.node-card[data-kind]').forEach(function(c){"
+    "var ok=(side==='all'||c.getAttribute('data-side')===side)&&"
+    "(kind==='all'||c.getAttribute('data-kind')===kind);"
+    "c.hidden=!ok;if(ok)shown++;});"
+    "document.querySelectorAll('.phase-section').forEach(function(s){"
+    "s.hidden=!s.querySelector('.node-card[data-kind]:not([hidden])');});"
+    "if(phaseNav)phaseNav.hidden=!(side==='all'&&kind==='all');"
+    "if(count)count.textContent=(side==='all'&&kind==='all')"
+    "?total+' nodes':shown+' of '+total+' nodes';}"
+    "bar.addEventListener('click',function(e){"
+    "var btn=e.target.closest('.filter-btn');if(!btn)return;"
+    "var g=btn.getAttribute('data-filter');"
+    "bar.querySelectorAll('.filter-btn[data-filter='+g+']').forEach("
+    "function(b){b.setAttribute('aria-pressed',b===btn?'true':'false');});"
+    "apply();});"
+    "})();"
+    "</script>"
+)
+
+
+def filter_bar(total):
+    def row(group, options, legend, aria):
+        btns = "".join(
+            f"<button type=button class=filter-btn data-filter='{group}' "
+            f"data-value='{html.escape(v)}' "
+            f"aria-pressed={'true' if v == 'all' else 'false'}>"
+            f"{html.escape(t)}</button>"
+            for v, t in options)
+        return (f"<div class=filter-row role=group aria-label='{aria}'>"
+                f"<span class=filter-legend>{html.escape(legend)}</span>"
+                f"{btns}</div>")
+
+    return ("<section class=filters aria-label='Filter the map'>"
+            + row("side", FILTER_SIDES, "Side", "Filter by side")
+            + row("kind", FILTER_KINDS, "Kind", "Filter by kind")
+            + f"<p class=filter-count id=filter-count>{total} nodes</p>"
+            + "</section>")
+
+
 def index_body(base, phases, by_phase):
+    total = sum(len(rs) for rs in by_phase.values())
     parts = [search_box(base),
              "<p class='lede muted'>A no-gi connection map: positions, scoring "
              "conditions, and the techniques that link them. Pick a phase, "
-             "follow the edges.</p>"]
+             "follow the edges.</p>",
+             filter_bar(total)]
     available = [p for p in phases if by_phase.get(p["key"])]
     if available:
         parts.append("<nav class=phase-nav aria-label='Jump to phase'>")
@@ -293,6 +358,7 @@ def index_body(base, phases, by_phase):
                      "<div class=node-grid>")
         parts.extend(node_summary(base, r) for r in rest)
         parts.append("</div></section>")
+    parts.append(FILTER_JS)
     return "".join(parts)
 
 
