@@ -184,7 +184,7 @@ def video_card(v):
         f"<span class=role-chip>{html.escape(v['role'])}</span>{stale}</div>"
         + meta_line +
         f"<div class=facade data-yid='{yid}'>"
-        f"<img loading=lazy src='https://i.ytimg.com/vi/{yid}/maxresdefault.jpg' "
+        f"<img loading=lazy src='https://i.ytimg.com/vi/{yid}/mqdefault.jpg' "
         f"onerror=\"this.onerror=null;this.src="
         f"'https://i.ytimg.com/vi/{yid}/hqdefault.jpg'\" "
         f"alt='Video thumbnail'>"
