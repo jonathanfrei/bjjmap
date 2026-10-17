@@ -61,6 +61,10 @@ def main():
     with open(os.path.join(BASE_DIR, "search.html"), encoding="utf-8") as f:
         write(out, "search/index.html",
               f.read().replace("__BASE__", base))
+    for pl in c.execute("SELECT * FROM plans").fetchall():
+        steps=c.execute("SELECT * FROM plan_steps WHERE plan_id=? ORDER BY pos",(pl["id"],)).fetchall()
+        write(out, f"plan/{pl['id']}/index.html", render.page(base, pl["title"], render.plan_body(base, pl, steps)))
+    write(out, "plans/index.html", render.page(base,"Plans", render.plans_body(base, c.execute("SELECT * FROM plans").fetchall(), c)))
     write(out, "health/index.html", render.page(
         base, "Map health",
         render.coverage_body(base, store.coverage(c)), active="health"))

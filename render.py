@@ -88,6 +88,11 @@ def nav(base, active=""):
     )
 
 
+def footer_date(base):
+    try:
+        import store; c=store.connect(); v=c.execute("SELECT max(published_at) FROM videos WHERE rejected=0").fetchone()[0]; c.close(); return (v or '')[:10]
+    except: return ''
+
 def footer(base):
     """Site-wide footer: attribution, maintenance links. Health/curation
     pages live here rather than in the primary nav — athletes want the map
@@ -119,7 +124,7 @@ def page(base, title, body, extra_head="", active="map", search=True):
         "a no-gi connection map of positions and techniques.'>"
         f"{THEME_BOOT}<link rel=stylesheet href='{base}/static/style.css'>"
         f"<link rel=icon href='{base}/static/favicon.svg' type='image/svg+xml'>"
-        f"<title>{html.escape(title)}</title>{extra_head}</head><body>"
+        f"<title>{html.escape(title)}</title><meta property='og:title' content='{html.escape(title)}'><meta property='og:description' content='{html.escape(title)} — BJJ Map'><meta property='og:image' content='{base}/static/og.png'><meta property='og:type' content='website'>{extra_head}</head><body>"
         f"{nav(base, active)}<main class='wrap page-main'>"
         # Node / health / 404 pages get the search box above the h1; the
         # index and search pages already render one inside their body.
@@ -392,6 +397,8 @@ def node_body(base, n, vids, aliases, techs, incoming, outgoing,
             for a in aliases)
         body += f"<div class=aliases><b>Also called</b>{pills}</div>"
     body += f"<p class=node-description>{html.escape(n['description'] or '')}</p>"
+    if n['rule_ref']: body += f"<p class=rule-ref>{html.escape(n['rule_ref'])}</p>"
+    body += f"<a class=edit-link href='{REPO_URL}/issues/new?title=Edit+suggestion%3A+{html.escape(n['name'])}&body=Node+{n['id']}+{html.escape(n['name'])}'>Suggest an edit</a>"
     body += f"<div class=node-actions><button id=star-btn type=button data-node='{n['id']}' aria-pressed=false>☆ My game</button> <button type=button data-add-drill='{n['id']}'>+ Drill queue</button></div>"
     body += "<div id=drill-queue class=drill-queue aria-live=polite></div><a id=drill-share hidden>Share drill link</a>"
     if n["kind"] == "condition" and techs:
@@ -469,3 +476,17 @@ def search_body(base, q, hits):
         body += "<div class=node-grid>" + \
             "".join(node_summary(base, r) for r in hits) + "</div>"
     return body
+
+def plans_body(base, plans, store_c):
+    import store as _s
+    parts=["<p class='lede muted'>Curated game-plan sequences.</p><ul class=plans-list>"]
+    for p in plans:
+        parts.append(f"<li><a href='{u(base,'/plan/')}{p['id']}/'>{p['title']}</a> — {p['blurb']}</li>")
+    parts.append("</ul>")
+    return "".join(parts)
+def plan_body(base, plan, steps):
+    parts=[f"<p class=lede>{plan['blurb']}</p><ol class=plan-steps>"]
+    for s in steps:
+        parts.append(f"<li><a href='{u(base,'/node/')}{s['node_id']}/'>{s['node_id']}</a> — {s['note']} <label><input type=checkbox data-step='{s['pos']}'> done</label></li>")
+    parts.append("</ol>")
+    return "".join(parts)

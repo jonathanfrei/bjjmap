@@ -18,7 +18,7 @@
   <nav class="primary-nav" aria-label="Primary">
     <a class="nav-link" href="__BASE__/">Map</a>
     <a class="nav-link" href="__BASE__/graph/" aria-current="page">Graph</a>
-  </nav>
+  </nav><label class=gi-toggle><input type=checkbox id=gi-toggle> Gi</label>
   <button class="theme-toggle" type="button" aria-label="Change color theme" title="Change color theme"><span aria-hidden="true"></span><span class="theme-label">Theme</span></button>
 </div></header>
 <main class="graph-main">
@@ -43,7 +43,7 @@
     <div class="graph-typeahead"><label for="graph-search" class="sr-only">Search nodes</label><input id="graph-search" placeholder="Search nodes…" autocomplete="off"><ul id="graph-search-hits" role="listbox" hidden></ul></div>
     <div id="graph-context" class="graph-context" aria-live="polite"></div>
     <ol id="graph-path-list" class="graph-path-list" aria-label="Path steps" hidden></ol>
-    <nav id="graph-a11y" class="graph-a11y" aria-label="Graph nodes (keyboard)"><ul id="graph-a11y-list"></ul></nav>
+    <nav id="graph-a11y" class="graph-a11y" aria-label="Graph nodes (keyboard)"><ul id="graph-a11y-list"></ul></nav><label class=gi-toggle><input type=checkbox id=gi-toggle> Gi</label>
   </div></section>
   <div id="net" role="img" aria-label="Interactive graph connecting BJJ positions and techniques"></div>
   <section class="graph-filters" aria-label="Graph filters"><div class="graph-tools-inner">
@@ -205,7 +205,7 @@ fetch(BASE + '/api/graph.json').then(function(r){ return r.json(); }).then(funct
     <a href="__BASE__/health/">Content status</a>
     <a href="https://github.com/jonathanfrei/bjjmap/issues/new/choose">Suggest an edit</a>
     <a href="https://github.com/jonathanfrei/bjjmap">Source</a>
-  </nav>
+  </nav><label class=gi-toggle><input type=checkbox id=gi-toggle> Gi</label>
 </div></footer>
 <script src="__BASE__/static/theme.js"></script>
-</body></html>
+<script>(function(){var k='bjjmap-gi',cb=document.getElementById('gi-toggle');try{cb.checked=localStorage.getItem(k)==='1';}catch(e){} cb.addEventListener('change',function(){try{localStorage.setItem(k,cb.checked?'1':'0');}catch(e){} location.reload();});})();</script></body></html>

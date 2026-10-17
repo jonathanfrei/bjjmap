@@ -14,6 +14,8 @@ CREATE TABLE nodes (
   scores_as TEXT DEFAULT NULL REFERENCES nodes(id),
   phase TEXT NOT NULL DEFAULT 'guard',
   source TEXT NOT NULL DEFAULT '',
+  rule_ref TEXT NOT NULL DEFAULT '',
+  gi_only INTEGER NOT NULL DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now'))
 );
 
@@ -44,6 +46,7 @@ CREATE TABLE edges (
   source TEXT NOT NULL DEFAULT '',
   trigger TEXT NOT NULL DEFAULT '',
   trigger_norm TEXT NOT NULL DEFAULT '',
+  gi_note TEXT NOT NULL DEFAULT '',
   UNIQUE(from_node, to_node, label, trigger_norm)
 );
 CREATE INDEX idx_edges_from ON edges(from_node);
@@ -67,3 +70,6 @@ CREATE TABLE phases (
   title TEXT NOT NULL,
   pos INTEGER NOT NULL
 );
+
+CREATE TABLE plans (id TEXT PRIMARY KEY, title TEXT NOT NULL, blurb TEXT NOT NULL DEFAULT '', audience TEXT NOT NULL DEFAULT '');
+CREATE TABLE plan_steps (plan_id TEXT NOT NULL REFERENCES plans(id) ON DELETE CASCADE, pos INTEGER NOT NULL, node_id TEXT NOT NULL REFERENCES nodes(id), note TEXT NOT NULL DEFAULT '', PRIMARY KEY(plan_id,pos));
