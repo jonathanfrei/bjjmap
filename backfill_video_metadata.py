@@ -29,16 +29,49 @@ def meta(yid):
             html = r.read().decode("utf-8", "replace")
     except Exception:
         return None
-    dur = re.search(r'"lengthSeconds":"(\d+)"', html)
-    pub = re.search(r'"publishDate":"([^"]+)"', html)
-    chan = re.search(r'"ownerChannelName":"((?:[^"\\]|\\.)*)"', html)
-    if not (dur and pub and chan):
+    # duration may be missing in new YT HTML; try multiple patterns
+    dur = re.search(r'"lengthSeconds"\s*:\s*"(\d+)"', html)
+    if not dur:
+        dur = re.search(r'"lengthSeconds"\s*:\s*(\d+)', html)
+    pub = re.search(r'"publishDate"\s*:\s*"([^"]+)"', html)
+    if not pub:
+        pub = re.search(r'"publishDate"\s*:\s*\{[^}]*"simpleText"\s*:\s*"([^"]+)"', html)
+    chan = re.search(r'"ownerChannelName"\s*:\s*"((?:[^"\\]|\\.)*)"', html)
+    # channel fallback via oEmbed (reliable)
+    if not chan:
+        try:
+            import urllib.request as _ur
+            _req = _ur.Request("https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v="+yid+"&format=json", headers={"User-Agent": UA})
+            with _ur.urlopen(_req, timeout=10) as _r:
+                import json as _js
+                _j = _js.loads(_r.read().decode())
+                _chan = _j.get("author_name","")
+                if _chan:
+                    chan = type('o', (), {'group': lambda s,n, _c=_chan: _c})()
+        except: pass
+    if not (pub and chan):
         return None
+    if not dur:
+        # duration unavailable in this HTML variant — keep 0, let caller still fill channel/date
+        dur = type('o', (), {'group': lambda s,n: '0'})()
     # ownerChannelName is JSON-escaped (e.g. \u0026 for &).
-    channel = json.loads('"' + chan.group(1) + '"')
+    raw_chan = chan.group(1)
+    try: channel = json.loads('"' + raw_chan + '"')
+    except: channel = raw_chan
+    # pub may be "May 5, 2021" -> convert to YYYY-MM-DD
+    raw_pub = pub.group(1)
+    if "-" not in raw_pub:
+        try:
+            import datetime
+            dt = datetime.datetime.strptime(raw_pub.strip(), "%b %d, %Y")
+            raw_pub = dt.strftime("%Y-%m-%d")
+        except:
+            try: dt = datetime.datetime.strptime(raw_pub.strip(), "%B %d, %Y")
+            except: pass
+            else: raw_pub = dt.strftime("%Y-%m-%d")
     return {"channel": channel,
             "duration_s": int(dur.group(1)),
-            "published_at": pub.group(1)[:10]}
+            "published_at": raw_pub[:10]}
 
 
 def main():
