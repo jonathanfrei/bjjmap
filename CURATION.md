@@ -5,8 +5,11 @@ the sentence, don't add the video.
 
 ## Hard gates (reject on sight)
 
-1. **Rule-set fit.** v1 is no-gi. Gi videos only if the concept transfers
-   completely (mark `rule_set='both'` and say so in the rationale).
+1. **Rule-set fit.** v1 is **No-Gi only** (Gi toggle was reverted — `nodes.gi_only` /
+   `edges.gi_note` are dormant). Gi videos only if the concept transfers
+   completely (mark `rule_set='both'` and say so in the rationale). Do not
+   expand Gi asides in descriptions (e.g. `open_guard_bottom`, `turtle_top`)
+   until a Gi track is re-scoped.
 2. **Embed alive.** Verify the 11-char ID resolves (YouTube oEmbed:
    `https://www.youtube.com/oembed?url=...&format=json`). Dead IDs rot the map.
 3. **On-node.** The video must teach *this* node, not a neighbor. A mount
@@ -87,6 +90,12 @@ changes), `frames-grips` (arm/hand/grip fighting), `defense-commit`
 (chin tucks, stalls), `weight-pressure` (rides, grapevines),
 `limb-exposure` (isolated limbs, open necks).
 
+## Description house voice
+
+Node descriptions stay ≥80 chars, in the form *purpose + primary failure
+mode*, without restating scoring (points live in node meta / condition
+pages). Packet 20 set this standard — keep it for any new or revised node.
+
 ## Packet workflow (per cluster, e.g. half guard)
 
 1. Research 2–4 candidate videos per node; verify IDs via oEmbed.
@@ -97,7 +106,10 @@ changes), `frames-grips` (arm/hand/grip fighting), `defense-commit`
 3. Insert directly (no approval gate) with `why_this_one` + `role`.
 4. Audit edges both directions: every technique gets a `scores as` edge to
    its condition; every position gets at least one entry and one exit path.
-5. Owner vetoes via `rejected=1` — never delete, so vetoes stay visible.
+5. **Plans** (`plans` / `plan_steps` via `migrations/011_plans.sql`) follow
+   the same `backup → stage → verify --strict → export-diff` flow; every
+   step `node_id` must resolve to a real node.
+6. Owner vetoes via `rejected=1` — never delete, so vetoes stay visible.
 
 ## Multi-agent packet protocol (parallel research agents)
 
