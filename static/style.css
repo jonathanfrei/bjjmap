@@ -146,8 +146,9 @@ p { margin: 0 0 var(--space-4); }
 .footer-nav a { color: var(--ink); font-size: 0.85rem; font-weight: 650; text-decoration: none; }
 .footer-nav a:hover { color: var(--accent); text-decoration: underline; }
 
-/* Search */
-.search-form { position: relative; display: flex; width: min(100%, 760px); gap: var(--space-2); margin: var(--space-6) 0 0; }
+/* Search — sits between header and h1 on node/health pages: tight but balanced */
+.search-form { position: relative; display: flex; width: min(100%, 760px); gap: var(--space-2); margin: var(--space-4) 0 var(--space-5); }
+.page-main .search-form + h1 { margin-top: 0; }
 .search-form input, #q {
   width: 100%; min-height: 46px; border: 1px solid var(--line-strong); border-radius: var(--radius-md);
   background: var(--surface); color: var(--ink); padding: 0.65rem 0.9rem 0.65rem 2.65rem; box-shadow: var(--shadow-sm);
@@ -339,6 +340,9 @@ button:active, .button:active { transform: translateY(1px); }
 @media (min-width: 940px) {
   .node-layout { grid-template-columns: minmax(0, 1fr) 330px; grid-template-areas: "overview connections" "instruction connections"; align-items: start; gap: var(--space-8) var(--space-10); }
   .connections-column { grid-area: connections; display: flex; position: sticky; top: 84px; max-height: calc(100dvh - 108px); flex-direction: column; gap: var(--space-4); overflow-y: auto; }
+}
+@media (max-width: 939px) {
+  .node-layout { grid-template-areas: "overview" "instruction" "connections-out" "connections-in"; }
 }
 @media (max-width: 719px) {
   .wrap { width: min(100% - 1.5rem, var(--maxw)); }
