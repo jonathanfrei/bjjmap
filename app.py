@@ -67,6 +67,18 @@ class H(BaseHTTPRequestHandler):
                 self.send_raw(200, payload, MIME[".json"])
             elif path.startswith("/static/"):
                 self.serve_static(path)
+            elif path in ("/plans","/plans/"):
+                c2=store.connect()
+                try: self.send(200, render.page(BASE_PATH,"Plans",render.plans_body(BASE_PATH,c2.execute("SELECT * FROM plans").fetchall(),c2)))
+                finally: c2.close()
+                return
+            elif path.startswith("/plan/"):
+                pid=unquote(path[len("/plan/"):]).strip("/");
+                r=c.execute("SELECT * FROM plans WHERE id=?",(pid,)).fetchone()
+                if not r: self.send(404, render.page(BASE_PATH,"Not found","<p>Unknown plan.</p>")); return
+                steps=c.execute("SELECT * FROM plan_steps WHERE plan_id=? ORDER BY pos",(pid,)).fetchall()
+                self.send(200, render.page(BASE_PATH,r["title"],render.plan_body(BASE_PATH,r,steps)))
+                return
             elif path in ("/coverage", "/health", "/health/"):
                 # /coverage is the legacy path; canonical is /health/
                 if path == "/coverage":
