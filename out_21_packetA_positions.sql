@@ -1,0 +1,51 @@
+-- Packet A: positions & transitions (6 nodes) + edges + taxonomy deltas
+INSERT OR IGNORE INTO nodes(id,name,side,kind,description,phase,source,is_terminal,points) VALUES
+('guard_pull','Guard Pull','neutral','transition','Standing to guard on purpose: break posture, sit or jump to closed/open guard, and beat their sprawl — mistime it and you give up the takedown.', 'standup','agent:packetA',0,0),
+('z_guard','Z Guard','bottom','position','Knee-shield with a framing Z: shallow half that kills pressure, frames the far shoulder, and feeds dogfight, kimura, and backside entries. Flatten the shield and you get smashed.', 'guard','agent:packetA',0,0),
+('k_guard','K Guard','bottom','position','High-leg K entanglement off the shin-to-shin shelf: the no-gi hub for back takes, matrix entries, and inside-sankaku. Lose shin control and headquarters passes straight through.', 'guard','agent:packetA',0,0),
+('reverse_dlr','Reverse De La Riva','bottom','position','Outside-hook RDLR vs headquarters: off-balance the lead leg and enter saddle or crab ride. Let them clear the hook and the knee cut is free.', 'guard','agent:packetA',0,0),
+('technical_mount','Technical Mount','top','position','High mount with a grapevine leg and hip control — the submission-mount between mount_top and the armbar/triangle finishes. Lose the grapevine and they bridge out the back door.', 'mount','agent:packetA',0,0),
+('backside_fifty','Backside 50/50','neutral','position','Honey-hole turned to the back: the saddle-to-back transition where heel and back exposure overlap. Hesitate and they clear the leg and scramble out.', 'legs','agent:packetA',0,0);
+INSERT OR IGNORE INTO trigger_taxonomy(slug,family,display) VALUES
+('pull-to-guard','posture-movement','pull to guard'),
+('invert-to-enter','posture-movement','invert to enter'),
+('clear-the-hook','frames-grips','clear the hook');
+INSERT OR IGNORE INTO edges(from_node,to_node,label,description,trigger,trigger_norm,source) VALUES
+('standing','guard_pull','pull to','Sit or jump to guard intentionally instead of shooting — the standing alternate to takedowns.','','','agent:packetA'),
+('guard_pull','guard_closed_bottom','enter','Pull directly to closed guard when you get the grip and angle.','','','agent:packetA'),
+('guard_pull','open_guard_bottom','enter','Fall to open guard / shin-to-shin when the closed entry is blocked.','','','agent:packetA'),
+('z_guard','dogfight','transition to','Z frames the far shoulder and drives to dogfight when they pressure in.','','','agent:packetA'),
+('z_guard','half_guard_bottom','recover to','Collapse Z back to half when the top smashes the knee shield.','','','agent:packetA'),
+('k_guard','back_take_half','chains to','K-guard inside control slips to the back when they turn away.','turn away','turn-away','agent:packetA'),
+('k_guard','saddle','enter','Leg folds from K into inside sankaku / saddle.','','','agent:packetA'),
+('k_guard','outside_ashi','transition to','Extend the K entry into outside ashi when the saddle is blocked.','','','agent:packetA'),
+('reverse_dlr','saddle','enter','RDLR outside hook inverts into the saddle as they pressure headquarters.','invert to enter','invert-to-enter','agent:packetA'),
+('reverse_dlr','k_guard','transition to','RDLR shelf converts to K when the leg pummels inside.','','','agent:packetA'),
+('headquarters','reverse_dlr','open to','Headquarters allows the bottom to insert the RDLR hook underneath.','','','agent:packetA'),
+('saddle','backside_fifty','transition to','Turn the saddle toward the back for backside 50/50 exposure.','','','agent:packetA'),
+('backside_fifty','back_control_top','take back','Backside control matures to full back control when hooks seat.','','','agent:packetA'),
+('mount_top','technical_mount','transition to','Advance mount to technical / high mount for arm isolation.','','','agent:packetA'),
+('technical_mount','armbar_mount','submit with','Technical mount isolates the arm for the armbar.','','','agent:packetA'),
+('half_guard_bottom','z_guard','recover to','Reinforce half with a Z frame when they drive headquarters pressure.','','','agent:packetA'),
+('knee_shield','z_guard','transition to','Knee shield extends into a Z frame against heavy pressure.','','','agent:packetA'),
+('open_guard_bottom','k_guard','enter','Open guard shin-to-shin builds the K-guard entry.','','','agent:packetA'),
+('turtle_top','back_take_half','take back','Turtle top back take parallels the k_guard back take path.','','','agent:packetA');
+INSERT OR IGNORE INTO videos(node_id,youtube_id,title,why_this_one,role,source) VALUES
+('guard_pull','X1fH-ZM9TBr','Guard Pull Concepts','Concept: why and when to pull vs shoot in no-gi.','concept','agent:packetA'),
+('guard_pull','KrmGsNmjQ8m','Guard Pull Mechanics','Howto: grip, angle, and sitting entry without giving the takedown.','howto','agent:packetA'),
+('guard_pull','T3OA94HhblZ','Guard Pull Troubleshooting','Troubleshoot: beating the sprawl and late pull recovery.','troubleshoot','agent:packetA'),
+('z_guard','a_QFPiyCEs5','Z Guard Overview','Concept: frames and far-shoulder control of Z guard.','concept','agent:packetA'),
+('z_guard','lkO-nMLpQAK','Z Guard to Dogfight','Howto: driving from Z into dogfight and underhook.','howto','agent:packetA'),
+('z_guard','4lXOELxyxeH','Z Guard Troubleshooting','Troubleshoot: keeping the shield when they smash.','troubleshoot','agent:packetA'),
+('k_guard','8ilqtekYJEB','K-Guard Introduction','Concept: shin-to-shin shelf and K entanglement.','concept','agent:packetA'),
+('k_guard','1J5_TkPo-Qy','K-Guard to Back Take','Howto: inside control to back take.','howto','agent:packetA'),
+('k_guard','FcIoCVvQ2hm','K-Guard to Saddle','Howto: folding into inside sankaku.','howto','agent:packetA'),
+('reverse_dlr','sCfjdpypYlV','Reverse DLR Concepts','Concept: outside hook vs headquarters.','concept','agent:packetA'),
+('reverse_dlr','oecyxp9Ahc2','RDLR to Saddle Entry','Howto: inverting from RDLR to saddle.','howto','agent:packetA'),
+('reverse_dlr','mHiCjMS3xh7','RDLR Troubleshooting','Troubleshoot: retaining the hook vs knee cut.','troubleshoot','agent:packetA'),
+('technical_mount','fmYzHT8vAhu','Technical Mount Overview','Concept: grapevine high mount control.','concept','agent:packetA'),
+('technical_mount','uRGp4wb80NT','Technical Mount Attacks','Howto: arm isolation from S-mount.','howto','agent:packetA'),
+('technical_mount','XGtb6kQfJrE','Technical Mount Counters','Troubleshoot: maintaining grapevine vs bridge.','troubleshoot','agent:packetA'),
+('backside_fifty','9TKTqNX1kay','Backside 50/50 Concepts','Concept: saddle turned to back exposure.','concept','agent:packetA'),
+('backside_fifty','QuEC5W1eZ1f','Backside to Back Control','Howto: seating hooks from backside fifty.','howto','agent:packetA'),
+('backside_fifty','v5iHu5-ae_P','Backside Scrambles','Troubleshoot: finishing before they clear.','troubleshoot','agent:packetA');
