@@ -367,3 +367,18 @@ button:active, .button:active { transform: translateY(1px); }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* Session layer (#23) */
+.watched{opacity:.62;} .watched-toggle{margin-left:auto;}
+.node-actions{display:flex;gap:var(--space-2);margin:var(--space-3) 0;}
+#star-btn[aria-pressed=true]{border-color:var(--accent);}
+.drill-queue{display:flex;flex-wrap:wrap;gap:var(--space-2);margin-top:var(--space-2);}
+/* Graph a11y + path (#22) */
+.graph-path{display:flex;flex-wrap:wrap;gap:var(--space-2);padding:var(--space-2) 0;}
+.graph-path select{min-height:40px;}
+.graph-path-list{margin:var(--space-2) 0;padding-left:1.2rem;}
+.graph-a11y{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;}
+.graph-a11y:focus-within{position:static;width:auto;height:auto;}
+.graph-typeahead{position:relative;}
+#graph-search-hits{position:absolute;z-index:5;list-style:none;margin:0;padding:4px;background:var(--surface);border:1px solid var(--line);min-width:220px;}
+#graph-search-hits li{padding:6px 8px;cursor:pointer;} #graph-search-hits li:focus{background:var(--surface-soft);}

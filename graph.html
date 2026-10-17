@@ -34,7 +34,16 @@
         <span class="graph-help">Scroll or pinch to zoom. Select a node to open its page.</span>
       </div>
     </details>
+    <form id="graph-path" class="graph-path" aria-label="Find path between nodes">
+      <label>From <select id="path-from"><option value="">—</option></select></label>
+      <label>To <select id="path-to"><option value="">—</option></select></label>
+      <button type="submit">Find path</button>
+      <a id="path-clear" href="__BASE__/graph/" hidden>Clear</a>
+    </form>
+    <div class="graph-typeahead"><label for="graph-search" class="sr-only">Search nodes</label><input id="graph-search" placeholder="Search nodes…" autocomplete="off"><ul id="graph-search-hits" role="listbox" hidden></ul></div>
     <div id="graph-context" class="graph-context" aria-live="polite"></div>
+    <ol id="graph-path-list" class="graph-path-list" aria-label="Path steps" hidden></ol>
+    <nav id="graph-a11y" class="graph-a11y" aria-label="Graph nodes (keyboard)"><ul id="graph-a11y-list"></ul></nav>
   </div></section>
   <div id="net" role="img" aria-label="Interactive graph connecting BJJ positions and techniques"></div>
   <section class="graph-filters" aria-label="Graph filters"><div class="graph-tools-inner">
@@ -68,6 +77,10 @@ function palette(){
 }
 
 fetch(BASE + '/api/graph.json').then(function(r){ return r.json(); }).then(function(g){
+  var params = new URLSearchParams(location.search);
+  var pathFrom = params.get('from'), pathTo = params.get('to');
+  try{var lastFocus=localStorage.getItem('bjjmap-graph-focus');if(!focus&&!pathFrom&&!pathTo&&lastFocus)focus=lastFocus;}catch(e){}
+  if(!focus&&!pathFrom&&!pathTo) focus='standing';
   var keep = null;
   var context = document.getElementById('graph-context');
   if (focus) {
@@ -131,7 +144,7 @@ fetch(BASE + '/api/graph.json').then(function(r){ return r.json(); }).then(funct
   var physics = {barnesHut: {gravitationalConstant: -2500, centralGravity: 0.6, springLength: 90, springConstant: 0.06, damping: 0.85, avoidOverlap: 0.6}, minVelocity: 0.5, maxVelocity: 8, stabilization: {enabled: true, iterations: 400, updateInterval: 25, fit: true}};
   var net = new vis.Network(document.getElementById('net'), {nodes: nodes, edges: edges}, {
     physics: physics,
-    interaction: {hover: true, navigationButtons: false}, nodes: {shape: 'ellipse', borderWidth: 0}
+    interaction: {hover: true, navigationButtons: true}, nodes: {shape: 'ellipse', borderWidth: 0}
   });
   var graphReady = false;
   function finishLayout(){
@@ -154,7 +167,24 @@ fetch(BASE + '/api/graph.json').then(function(r){ return r.json(); }).then(funct
       edges.forEach(function(e){ edges.update({id: e.id, label: show ? e.fullLabel : ''}); });
     });
   }
-  net.on('click', function(p){ if (p.nodes.length) location.href = BASE + '/node/' + encodeURIComponent(p.nodes[0]) + '/'; });
+  net.on('click', function(p){ if (p.nodes.length){ try{localStorage.setItem('bjjmap-graph-focus', p.nodes[0]);}catch(e){} location.href = BASE + '/node/' + encodeURIComponent(p.nodes[0]) + '/'; }});
+  // Hover highlight neighbors; edge labels only for selected node
+  var defaultLabels=[]; edges.forEach(function(e){defaultLabels[e.id]=e.label;});
+  net.on('hoverNode', function(p){ var c=[]; g.edges.forEach(function(e){ if(e.from_node===p.node||e.to_node===p.node) c.push(e.from_node===p.node?e.to_node:e.from_node); }); net.selectNodes([p.node].concat(c)); });
+  net.on('selectNode', function(p){ var sel=p.nodes[0]; edges.forEach(function(e){ var show = sel && (e.from===sel||e.to===sel); edges.update({id:e.id, label: show?e.fullLabel:''}); }); renderA11y(sel); });
+  net.on('deselectNode', function(){ edges.forEach(function(e){ edges.update({id:e.id, label: mobile?'':e.fullLabel}); }); renderA11y(null); });
+  function bfs(from,to){ var adj={}; g.edges.forEach(function(e){ (adj[e.from_node]=adj[e.from_node]||[]).push(e.to_node); }); var q=[[from]], seen={}; seen[from]=1; while(q.length){ var path=q.shift(), cur=path[path.length-1]; if(cur===to) return path; (adj[cur]||[]).forEach(function(n){ if(!seen[n]){seen[n]=1; q.push(path.concat(n));}});} return null; }
+  function highlightPath(path){ if(!path) return; var set={}; path.forEach(function(id){set[id]=1;}); nodes.forEach(function(n){ nodes.update({id:n.id, opacity: set[n.id]?1:0.18}); }); edges.forEach(function(e){ var on=false; for(var i=0;i<path.length-1;i++) if(e.from===path[i]&&e.to===path[i+1]) on=true; edges.update({id:e.id, color:{color:on?css('--accent'):css('--line-strong'), opacity:on?1:0.22}, width: on?3:1, label:on?e.fullLabel:''}); }); var ol=document.getElementById('graph-path-list'); ol.innerHTML=''; path.forEach(function(id){ var n=g.nodes.find(function(x){return x.id===id;}); var li=document.createElement('li'); var a=document.createElement('a'); a.href=BASE+'/node/'+encodeURIComponent(id)+'/'; a.textContent=n?n.name:id; li.appendChild(a); ol.appendChild(li);}); ol.hidden=false; document.getElementById('path-clear').hidden=false; }
+  if(pathFrom&&pathTo){ var pp=bfs(pathFrom,pathTo); if(pp) highlightPath(pp); else { context.textContent='No path from '+pathFrom+' to '+pathTo; } }
+  // Typeahead + path selectors
+  var selFrom=document.getElementById('path-from'), selTo=document.getElementById('path-to');
+  var sorted=[].concat(g.nodes).sort(function(a,b){return a.name.localeCompare(b.name);});
+  sorted.forEach(function(n){ var o1=document.createElement('option'), o2=document.createElement('option'); o1.value=o2.value=n.id; o1.textContent=o2.textContent=n.name; if(n.id===pathFrom) o1.selected=true; if(n.id===pathTo) o2.selected=true; selFrom.appendChild(o1); selTo.appendChild(o2); });
+  document.getElementById('graph-path').addEventListener('submit', function(e){ e.preventDefault(); var f=selFrom.value, t=selTo.value; if(f&&t) location.href=BASE+'/graph/?from='+encodeURIComponent(f)+'&to='+encodeURIComponent(t); });
+  var sInput=document.getElementById('graph-search'), sHits=document.getElementById('graph-search-hits');
+  sInput.addEventListener('input', function(){ var q=sInput.value.trim().toLowerCase(); sHits.innerHTML=''; if(!q){sHits.hidden=true;return;} var m=sorted.filter(function(n){return n.name.toLowerCase().indexOf(q)>-1||n.id.indexOf(q)>-1;}).slice(0,8); m.forEach(function(n){ var li=document.createElement('li'); li.role='option'; li.textContent=n.name; li.tabIndex=0; li.addEventListener('click', function(){ net.selectNodes([n.id]); net.focus(n.id,{scale:1.2}); try{localStorage.setItem('bjjmap-graph-focus', n.id);}catch(e){} }); sHits.appendChild(li); }); sHits.hidden=!m.length; });
+  function renderA11y(sel){ var ul=document.getElementById('graph-a11y-list'); ul.innerHTML=''; var visible=[]; nodes.forEach(function(n){ if(!n.hidden) visible.push(n); }); visible.sort(function(a,b){return a.label.localeCompare(b.label);}); visible.forEach(function(n){ var li=document.createElement('li'); var a=document.createElement('a'); a.href=BASE+'/node/'+encodeURIComponent(n.id)+'/'; a.textContent=n.label; if(sel===n.id) a.setAttribute('aria-current','true'); li.appendChild(a); ul.appendChild(li); }); }
+  renderA11y(focus||null);
   window.addEventListener('bjjmap-themechange', function(){
     colors = palette();
     nodes.forEach(function(n){
