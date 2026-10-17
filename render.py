@@ -126,7 +126,7 @@ def page(base, title, body, extra_head="", active="map", search=True):
         + (search_box(base) if search else "")
         + f"<h1>{html.escape(title)}</h1>{body}</main>"
         f"{footer(base)}"
-        f"<script src='{base}/static/theme.js' defer></script></body></html>"
+        f"<script src='{base}/static/theme.js' defer></script><script src='{base}/static/session.js' defer></script></body></html>"
     )
 
 
@@ -392,6 +392,8 @@ def node_body(base, n, vids, aliases, techs, incoming, outgoing,
             for a in aliases)
         body += f"<div class=aliases><b>Also called</b>{pills}</div>"
     body += f"<p class=node-description>{html.escape(n['description'] or '')}</p>"
+    body += f"<div class=node-actions><button id=star-btn type=button data-node='{n['id']}' aria-pressed=false>☆ My game</button> <button type=button data-add-drill='{n['id']}'>+ Drill queue</button></div>"
+    body += "<div id=drill-queue class=drill-queue aria-live=polite></div><a id=drill-share hidden>Share drill link</a>"
     if n["kind"] == "condition" and techs:
         body += "<section class=score-paths><h2>Ways to score it</h2><ul>" + "".join(
             f"<li><a href='{u(base, '/node/')}{t['id']}/'>"
