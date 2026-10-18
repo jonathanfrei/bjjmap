@@ -12,7 +12,13 @@ the sentence, don't add the video.
    until a Gi track is re-scoped.
 2. **Embed alive.** Verify the 11-char ID resolves (YouTube oEmbed:
    `https://www.youtube.com/oembed?url=...&format=json`). Dead IDs rot the map.
-3. **On-node.** The video must teach *this* node, not a neighbor. A mount
+3. **No Shorts.** YouTube Shorts are vertical (9:16) and break the 16:9
+   facade. Reject any candidate where
+   `curl -I https://www.youtube.com/shorts/<id>` returns **200**
+   (vertical Short); keep only **303** (redirects to `/watch`, regular
+   horizontal video). Do not rely on `#shorts` in the title — many Shorts
+   omit it.
+4. **On-node.** The video must teach *this* node, not a neighbor. A mount
    video that is really about armbars belongs on the armbar node.
 
 ## Scoring (prefer videos that hit most)
